@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ООО ЛиСТ — Напитки оптом</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Geologica:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="nav-brand">
+    <div class="nav-logo">ООО ЛиСТ</div>
+    <div class="nav-tagline">Напитки оптом · Складское предприятие</div>
+  </div>
+  <div class="nav-links">
+    <span class="nav-lnk on" onclick="go('home')">Главная</span>
+    <span class="nav-lnk" onclick="go('catalogue')">Каталог</span>
+    <span class="nav-lnk" onclick="go('services')">Услуги склада</span>
+    <span class="nav-lnk" onclick="go('tariffs')">Тарифы</span>
+    <span class="nav-lnk" onclick="go('about')">О компании</span>
+    <span class="nav-lnk" onclick="go('contacts')">Контакты</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-phone">+7 (495) 229-40-05</span>
+    <button class="cart-btn" onclick="go('cart')" aria-label="Корзина">🛒<span class="cart-dot" id="cdot">0</span></button>
+    <button class="btn-ghost" onclick="go('orders')" id="norders" style="display:none">Мои заказы</button>
+    <button class="btn-solid" onclick="go('auth')" id="nauth">Войти</button>
+    <button class="btn-ghost" onclick="doLogout()" id="nlogout" style="display:none">Выйти</button>
+  </div>
+</nav>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span class="toast-ic" id="tic"></span><span id="tmsg"></span></div>
+
+<!-- ═══ HOME ═══ -->
+<div class="view active" id="view-home">
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-left">
+      <div class="hero-chip">⬡ Складское предприятие · С 1998 года</div>
+      <h1 class="hero-title">НАПИТКИ<br>ДЛЯ<br><em>ВАШЕГО</em><br>БИЗНЕСА</h1>
+      <p class="hero-desc">ООО ЛиСТ — дистрибьюция и оптовая торговля напитками. Вино, пиво, газировки и вода со склада в Домодедово. Самовывоз и доставка по Москве и МО.</p>
+      <div class="hero-btns">
+        <button class="btn-hero btn-hero-main" onclick="go('catalogue')">Открыть каталог</button>
+        <button class="btn-hero btn-hero-out" onclick="go('contacts')">Получить консультацию</button>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="stat-big">450+</div>
+          <div class="stat-lbl">Позиций в каталоге</div>
+        </div>
+        <div class="hero-stat">
+          <div class="stat-big">17К</div>
+          <div class="stat-lbl">Паллетомест на складе</div>
+        </div>
+        <div class="hero-stat">
+          <div class="stat-big">120</div>
+          <div class="stat-lbl">Единиц транспорта</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-badge"><div style="font-size:18px">от</div><div style="font-size:26px">32₽</div><div style="font-size:11px;letter-spacing:1px">сутки/пал.</div></div>
+      <div class="hero-right-grid ani">
+        <div class="cat-pill" onclick="go('catalogue');fcat('wine')">
+          <div class="cat-pill-icon">🍷</div>
+          <div><div class="cat-pill-name">Вино</div><div class="cat-pill-sub">Красное, белое, розовое, игристое</div></div>
+          <div class="cat-pill-price">от 290₽</div>
+        </div>
+        <div class="cat-pill" onclick="go('catalogue');fcat('beer')">
+          <div class="cat-pill-icon">🍺</div>
+          <div><div class="cat-pill-name">Пиво</div><div class="cat-pill-sub">Светлое, тёмное, крафт</div></div>
+          <div class="cat-pill-price">от 85₽</div>
+        </div>
+        <div class="cat-pill" onclick="go('catalogue');fcat('soda')">
+          <div class="cat-pill-icon">🥤</div>
+          <div><div class="cat-pill-name">Газировки</div><div class="cat-pill-sub">Лимонады, соки, энергетики</div></div>
+          <div class="cat-pill-price">от 55₽</div>
+        </div>
+        <div class="cat-pill" onclick="go('catalogue');fcat('water')">
+          <div class="cat-pill-icon">💧</div>
+          <div><div class="cat-pill-name">Вода</div><div class="cat-pill-sub">Газированная и негазированная</div></div>
+          <div class="cat-pill-price">от 35₽</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT BLOCK -->
+  <section class="section">
+    <div class="about-grid">
+      <div>
+        <div class="sec-label">О компании</div>
+        <h2 class="sec-title">В режиме нон-стоп с 1998 года</h2>
+        <p style="color:var(--ink2);font-size:15px;line-height:1.75;margin-top:16px">Компания успешно функционирует на рынке с 1998 года. В начале пути специализировалась на дистрибуции для крупных оптовых клиентов. Первым якорным клиентом стала международная группа <strong>Anadolu Efes</strong>.</p>
+        <p style="color:var(--ink2);font-size:15px;line-height:1.75;margin-top:12px">Сегодня ежедневно обрабатывается, принимается на хранение и доставляется более чем по <strong>2 000 адресов</strong> Москвы и МО порядка <strong>500 тонн грузов</strong>. В штате — 150 профессионалов.</p>
+        <button class="btn-solid" style="margin-top:28px;padding:12px 28px;font-size:14px" onclick="go('about')">Читать подробнее →</button>
+      </div>
+      <div class="about-visual">
+        <div class="av-card">
+          <div class="av-num">17К</div>
+          <div class="av-lbl">паллетомест</div>
+        </div>
+        <div class="av-card">
+          <div class="av-num">120</div>
+          <div class="av-lbl">единиц транспорта</div>
+        </div>
+        <div class="av-card">
+          <div class="av-num">150</div>
+          <div class="av-lbl">сотрудников</div>
+        </div>
+        <div class="av-card">
+          <div class="av-num">А</div>
+          <div class="av-lbl">класс склада</div>
+        </div>
+        <div class="av-card av-card-dark">
+          <div class="av-num">500 тонн / день</div>
+          <div class="av-lbl" style="color:rgba(255,255,255,.45)">ежедневный оборот грузов</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES PREVIEW -->
+  <section class="section section-alt">
+    <div class="sec-head">
+      <div class="sec-label">Наши услуги</div>
+      <h2 class="sec-title">Полный комплекс логистики</h2>
+      <p class="sec-sub">Всё необходимое для хранения, обработки и доставки ваших грузов под одной крышей.</p>
+    </div>
+    <div class="svcs-grid">
+      <div class="svc" onclick="go('services')">
+        <div class="svc-icon">🏭</div>
+        <div class="svc-title">Ответственное хранение</div>
+        <div class="svc-desc">Напольное и стеллажное хранение с соблюдением оптимальной температуры и влажности. Склад категории А в Домодедово.</div>
+        <div class="svc-price">от 32 ₽ / пал. в сутки</div>
+      </div>
+      <div class="svc" onclick="go('services')">
+        <div class="svc-icon">📦</div>
+        <div class="svc-title">Комплектация и маркировка</div>
+        <div class="svc-desc">Комплектуем заказы, наносим штрих-коды и маркировку по требованиям заказчика. Передача в службу доставки или самовывоз.</div>
+        <div class="svc-price">от 7 ₽ / шт.</div>
+      </div>
+      <div class="svc" onclick="go('services')">
+        <div class="svc-icon">🚛</div>
+        <div class="svc-title">Доставка грузов</div>
+        <div class="svc-desc">Доставка «от двери до двери» по Москве и Московской области. 120 единиц транспорта от малотоннажного до крупнотоннажного.</div>
+        <div class="svc-price">от 18 000 ₽ / 5 тонн</div>
+      </div>
+      <div class="svc" onclick="go('services')">
+        <div class="svc-icon">🔄</div>
+        <div class="svc-title">Кросс-докинг</div>
+        <div class="svc-desc">Перегрузка товара и краткосрочное хранение грузовыми местами. Минимальные сроки обработки.</div>
+        <div class="svc-price">от 180 ₽ / монопаллет</div>
+      </div>
+      <div class="svc" onclick="go('services')">
+        <div class="svc-icon">🏗️</div>
+        <div class="svc-title">Погрузка / разгрузка</div>
+        <div class="svc-desc">Механизированным способом или вручную, в соответствии с характеристиками груза.</div>
+        <div class="svc-price">от 140 ₽ / паллет</div>
+      </div>
+      <div class="svc" onclick="go('services')">
+        <div class="svc-icon">📋</div>
+        <div class="svc-title">Опалечивание</div>
+        <div class="svc-desc">Укладка товара на паллеты и фиксация стрейч-плёнкой для безопасной транспортировки.</div>
+        <div class="svc-price">250 ₽ / упаковка</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLIENTS -->
+  <section class="section">
+    <div class="sec-head">
+      <div class="sec-label">Клиенты</div>
+      <h2 class="sec-title">Нам доверяют крупные компании</h2>
+    </div>
+    <div class="clients-strip">
+      <div class="client-logo">Anadolu Efes</div>
+      <div class="client-logo">Балтика</div>
+      <div class="client-logo">Heineken</div>
+      <div class="client-logo">Coca-Cola HBC</div>
+      <div class="client-logo">AB InBev</div>
+      <div class="client-logo">Diageo</div>
+      <div class="client-logo">Фанагория</div>
+      <div class="client-logo">Абрау-Дюрсо</div>
+      <div class="client-logo">Red Bull</div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section section-dark">
+    <div style="text-align:center;max-width:600px;margin:0 auto">
+      <div class="sec-label" style="color:var(--gold);justify-content:center;display:flex">Приезжайте к нам</div>
+      <h2 class="sec-title" style="color:#fff;margin:10px 0">Посмотрите наш склад</h2>
+      <p style="color:rgba(255,255,255,.55);font-size:15px;margin-top:10px">Мы всегда готовы встретить вас и провести экскурсию по складскому комплексу в Домодедово.</p>
+      <div style="display:flex;gap:12px;justify-content:center;margin-top:32px;flex-wrap:wrap">
+        <button class="btn-hero btn-hero-main" onclick="go('contacts')">Заказать звонок</button>
+        <button style="background:rgba(255,255,255,.1);color:#fff;border:1.5px solid rgba(255,255,255,.25);border-radius:10px;padding:14px 32px;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s" onclick="go('tariffs')">Тарифы</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-grid">
+      <div>
+        <div class="f-logo">ООО ЛиСТ</div>
+        <div class="f-tagline">Напитки оптом · Складское предприятие</div>
+        <p class="f-desc">Логистическая компания с 1998 года. Хранение, обработка и доставка напитков по Москве и Московской области.</p>
+      </div>
+      <div>
+        <div class="f-col-ttl">Каталог</div>
+        <span class="f-lnk" onclick="go('catalogue');fcat('wine')">Вино</span>
+        <span class="f-lnk" onclick="go('catalogue');fcat('beer')">Пиво</span>
+        <span class="f-lnk" onclick="go('catalogue');fcat('soda')">Газировки</span>
+        <span class="f-lnk" onclick="go('catalogue');fcat('water')">Вода</span>
+      </div>
+      <div>
+        <div class="f-col-ttl">Компания</div>
+        <span class="f-lnk" onclick="go('about')">О компании</span>
+        <span class="f-lnk" onclick="go('services')">Складские услуги</span>
+        <span class="f-lnk" onclick="go('tariffs')">Тарифы</span>
+        <span class="f-lnk" onclick="go('contacts')">Контакты</span>
+        <span class="f-lnk" onclick="go('contacts')">Политика персданных</span>
+      </div>
+      <div>
+        <div class="f-col-ttl">Контакты</div>
+        <span class="f-lnk">📞 +7 (495) 229-40-05</span>
+        <span class="f-lnk">📍 Домодедово, тер. Триколор, 11</span>
+        <span class="f-lnk">📞 +7 (4872) 25-14-07</span>
+        <span class="f-lnk">📍 Тула, ул. Луначарского, 76</span>
+        <span class="f-lnk">📍 Рязань, ул. Ряжское шоссе, 20</span>
+      </div>
+    </div>
+    <div class="f-bottom">
+      <div class="f-copy">© 2024 ООО ЛиСТ. Все права защищены.</div>
+      <div class="f-ogrn">3PL · FMCG · Складская логистика</div>
+    </div>
+  </footer>
+</div>
+
+<!-- ═══ CATALOGUE ═══ -->
+<div class="view" id="view-catalogue">
+  <div class="cat-page">
+    <div class="cat-top">
+      <div class="cat-title-row">
+        <div class="sec-label" style="margin-bottom:6px">Каталог товаров</div>
+        <h1 style="font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:.5px;line-height:1">Напитки оптом</h1>
+      </div>
+      <div class="search-row">
+        <input class="s-input" placeholder="🔍  Поиск по названию или бренду..." id="si" oninput="rp()">
+        <select class="s-select" onchange="srt(this.value)">
+          <option value="">По умолчанию</option>
+          <option value="pa">Цена ↑</option>
+          <option value="pd">Цена ↓</option>
+          <option value="nm">По названию</option>
+        </select>
+      </div>
+    </div>
+    <div class="filter-strip" id="ftabs">
+      <button class="ftab on" onclick="fcat('all')">Все товары</button>
+      <button class="ftab ftab-wine" onclick="fcat('wine')">🍷 Вино</button>
+      <button class="ftab ftab-beer" onclick="fcat('beer')">🍺 Пиво</button>
+      <button class="ftab ftab-soda" onclick="fcat('soda')">🥤 Газировки</button>
+      <button class="ftab ftab-water" onclick="fcat('water')">💧 Вода</button>
+    </div>
+    <div class="pgrid" id="pgrid"></div>
+  </div>
+</div>
+
+<!-- ═══ SERVICES ═══ -->
+<div class="view" id="view-services">
+  <div style="padding-top:68px;min-height:100vh">
+    <section class="section">
+      <div class="sec-label">Складские услуги</div>
+      <h1 class="sec-title">Ответственное хранение<br>и обработка грузов</h1>
+      <p class="sec-sub" style="margin-top:14px">От 32 рублей за паллето-место в сутки. Склад категории А в Домодедово.</p>
+      <div class="svcs-grid" style="margin-top:48px">
+        <div class="svc"><div class="svc-icon">🏭</div><div class="svc-title">Хранение</div><div class="svc-desc">Напольное и стеллажное хранение товаров широкого спектра. Оптимальная температура и влажность. Склад категории А.</div><div class="svc-price">от 32 ₽ / пал. в сутки</div></div>
+        <div class="svc"><div class="svc-icon">🏗️</div><div class="svc-title">Погрузка / разгрузка</div><div class="svc-desc">Погрузочно-разгрузочные работы механизированным способом или вручную в соответствии с характеристиками груза.</div><div class="svc-price">от 140 ₽ / паллет</div></div>
+        <div class="svc"><div class="svc-icon">📦</div><div class="svc-title">Комплектация</div><div class="svc-desc">Сформированный заказ комплектуется указанными товарами и передаётся в службу доставки или на самовывоз.</div><div class="svc-price">7 ₽ / шт. · 18 ₽ / короб</div></div>
+        <div class="svc"><div class="svc-icon">🏷️</div><div class="svc-title">Маркировка товара</div><div class="svc-desc">Печать этикеток и нанесение маркировки на любую единицу товара согласно требованиям заказчика.</div><div class="svc-price">от 7 ₽ / этикетка</div></div>
+        <div class="svc"><div class="svc-icon">🎁</div><div class="svc-title">Опалечивание</div><div class="svc-desc">Укладка товара на паллеты и фиксация стрейч-плёнкой при необходимости дополнительной защиты груза.</div><div class="svc-price">250 ₽ / упаковка стрейч</div></div>
+        <div class="svc"><div class="svc-icon">🔄</div><div class="svc-title">Кросс-докинг</div><div class="svc-desc">Перегрузка товара и краткосрочное хранение грузовыми местами без полной складской обработки.</div><div class="svc-price">от 180 ₽ / монопаллет</div></div>
+      </div>
+    </section>
+    <section class="section section-alt">
+      <div class="sec-head"><div class="sec-label">Как это работает</div><h2 class="sec-title">Работать с нами просто</h2></div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-ttl">Приёмка товаров</div><div class="step-txt">Проверяем документы, количество, ассортимент и упаковку</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-ttl">Сортировка</div><div class="step-txt">Сортируем по паллетам, бракованный товар — в спец. зону</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-ttl">Хранение</div><div class="step-txt">Размещаем на складе, оформляем акт приёма-передачи</div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-ttl">Комплектация</div><div class="step-txt">Наносим штрих-коды, комплектуем заказы по запросу</div></div>
+        <div class="step"><div class="step-num">5</div><div class="step-ttl">Выдача</div><div class="step-txt">Передаём на доставку нашей службой или самовывоз</div></div>
+      </div>
+    </section>
+    <!-- Calculator -->
+    <section class="section">
+      <div class="sec-head"><div class="sec-label">Расчёт стоимости</div><h2 class="sec-title">Калькулятор хранения</h2></div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:36px;max-width:560px">
+        <div class="fg"><label class="flbl">Тип паллета</label>
+          <select class="finp" id="pal-type" onchange="calcStorage()">
+            <option value="32">Европаллет (32 ₽/сутки)</option>
+            <option value="36">Финский/Американский паллет (36 ₽/сутки)</option>
+          </select>
+        </div>
+        <div class="frow">
+          <div class="fg"><label class="flbl">Количество паллет</label><input class="finp" type="number" id="pal-cnt" value="10" min="1" oninput="calcStorage()"></div>
+          <div class="fg"><label class="flbl">Количество дней</label><input class="finp" type="number" id="pal-days" value="30" min="1" oninput="calcStorage()"></div>
+        </div>
+        <div style="background:var(--green-light);border:1px solid rgba(26,92,56,.2);border-radius:12px;padding:20px;display:flex;justify-content:space-between;align-items:center">
+          <div><div style="font-size:12px;color:var(--ink3);font-weight:600;letter-spacing:.5px;text-transform:uppercase">Стоимость хранения</div><div style="font-size:11px;color:var(--ink3);margin-top:2px">без НДС</div></div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--green);letter-spacing:.5px" id="calc-result">9 600 ₽</div>
+        </div>
+        <button class="btn-solid" style="width:100%;padding:13px;font-size:15px;margin-top:16px;border-radius:12px" onclick="go('contacts')">Заказать точный расчёт</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ═══ TARIFFS ═══ -->
+<div class="view" id="view-tariffs">
+  <div style="padding-top:68px;min-height:100vh">
+    <section class="section">
+      <div class="sec-label">Тарифы</div>
+      <h1 class="sec-title">Тарифы на грузоперевозки</h1>
+      <p class="sec-sub" style="margin-top:14px">Доставка «от двери до двери» по Москве и Московской области. Собственный автопарк из 120 единиц транспорта.</p>
+      <div class="tar-grid" style="margin-top:48px">
+        <div class="tar featured">
+          <div class="tar-type">Малотоннажный транспорт</div>
+          <div class="tar-load">до 5 тонн</div>
+          <div class="tar-price">24 ₽ / км</div>
+          <div class="tar-or">или</div>
+          <div class="tar-price2">2 300 ₽ / час</div>
+          <ul class="tar-list">
+            <li class="tar-li">До 5 тонн грузоподъёмность</li>
+            <li class="tar-li">До 21.4 м³ объём кузова</li>
+            <li class="tar-li">До 10 европаллет</li>
+            <li class="tar-li">Минимум 8 часов работы</li>
+            <li class="tar-li">Идеально для малого бизнеса</li>
+          </ul>
+          <button class="btn-solid" style="width:100%;padding:12px;font-size:14px;border-radius:10px;margin-top:24px" onclick="go('contacts')">Заказать перевозку</button>
+        </div>
+        <div class="tar">
+          <div class="tar-type">Крупнотоннажный транспорт</div>
+          <div class="tar-load">до 20 тонн</div>
+          <div class="tar-price">45 ₽ / км</div>
+          <div class="tar-or">или</div>
+          <div class="tar-price2">4 000 ₽ / час</div>
+          <ul class="tar-list">
+            <li class="tar-li">До 20 тонн грузоподъёмность</li>
+            <li class="tar-li">До 82 м³ объём кузова</li>
+            <li class="tar-li">До 32 европаллет</li>
+            <li class="tar-li">Минимум 8 часов работы</li>
+            <li class="tar-li">Для крупных партий</li>
+          </ul>
+          <button class="btn-ghost" style="width:100%;padding:12px;font-size:14px;border-radius:10px;margin-top:24px" onclick="go('contacts')">Заказать перевозку</button>
+        </div>
+      </div>
+      <div style="background:var(--gold-light);border:1px solid rgba(200,146,10,.25);border-radius:16px;padding:24px 28px;margin-top:24px;display:flex;align-items:center;gap:16px">
+        <div style="font-size:28px">💡</div>
+        <div><div style="font-weight:600;font-size:15px;margin-bottom:4px">Сборные грузы</div><div style="font-size:14px;color:var(--ink2)">Также доступна доставка сборными грузами со склада ответственного хранения. Позволяет уменьшить тариф и снимает ограничения на минимальный объём заказа. Уточняйте условия у менеджера.</div></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ═══ ABOUT ═══ -->
+<div class="view" id="view-about">
+  <div style="padding-top:68px;min-height:100vh">
+    <section class="section">
+      <div class="sec-label">О компании</div>
+      <h1 class="sec-title">3D Logistic — <br>в режиме нон-стоп</h1>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:40px">
+        <div>
+          <p style="font-size:15px;color:var(--ink2);line-height:1.8;margin-bottom:16px">Логистическая компания успешно функционирует на рынке с <strong>1998 года</strong>. Реализовав два десятилетия назад масштабный проект создания полнофункциональной транспортной компании, сегодня прочно занимает тематическую нишу и расширяет сеть.</p>
+          <p style="font-size:15px;color:var(--ink2);line-height:1.8;margin-bottom:16px">В начале пути компания специализировалась на дистрибуции и была ориентирована на крупных оптовых клиентов. Первым якорным клиентом стала международная группа компаний <strong>Anadolu Efes</strong>.</p>
+          <p style="font-size:15px;color:var(--ink2);line-height:1.8;margin-bottom:16px">Филиальная сеть начала активно расти с 2004 года: Истра, Чехов, Тула, Смоленск, Калуга, Брянск, Вязьма. В 2012 году открыт собственный логистический комплекс в Москве.</p>
+          <p style="font-size:15px;color:var(--ink2);line-height:1.8">В этом году реализован масштабный проект — создание для компании <strong>«Балтика»</strong> распределительного транспортно-логистического центра федерального уровня с оборотом не менее <strong>600 паллет в сутки</strong>.</p>
+        </div>
+        <div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div class="av-card"><div class="av-num">1998</div><div class="av-lbl">год основания</div></div>
+            <div class="av-card"><div class="av-num">150</div><div class="av-lbl">сотрудников</div></div>
+            <div class="av-card"><div class="av-num">2000+</div><div class="av-lbl">адресов доставки в день</div></div>
+            <div class="av-card"><div class="av-num">500т</div><div class="av-lbl">грузов в сутки</div></div>
+            <div class="av-card av-card-dark" style="grid-column:1/-1"><div class="av-num">17 000</div><div class="av-lbl" style="color:rgba(255,255,255,.45)">паллетомест · 3PL · FMCG</div></div>
+          </div>
+          <div style="margin-top:16px;background:var(--green-light);border:1px solid rgba(26,92,56,.2);border-radius:16px;padding:20px 24px">
+            <div style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--green);margin-bottom:8px">Склады</div>
+            <div style="font-size:13px;color:var(--ink2);line-height:1.7">
+              📍 Домодедово, территория Триколор, 11<br>
+              📍 Тула, ул. Щегловская Засека, 31А<br>
+              📍 Тула, ул. Луначарского, 76<br>
+              📍 Рязань, ул. Ряжское шоссе, 20<br>
+              📍 Истра, д. Покровское, Центральная, 27с2
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ═══ CONTACTS ═══ -->
+<div class="view" id="view-contacts">
+  <div style="padding-top:68px;min-height:100vh">
+    <section class="section">
+      <div class="sec-label">Контакты</div>
+      <h1 class="sec-title">Свяжитесь с нами</h1>
+      <div class="contacts-grid" style="margin-top:40px">
+        <div>
+          <div class="contact-block"><div class="cb-label">Телефон (Москва)</div><div class="cb-val">+7 (495) 229-40-05</div></div>
+          <div class="contact-block"><div class="cb-label">Телефон (Тула)</div><div class="cb-val">+7 (4872) 25-14-07</div></div>
+          <div class="contact-block">
+            <div class="cb-label">Адреса складов</div>
+            <div class="loc-list">
+              <div class="loc-item"><div class="loc-name">Главный склад</div><div class="loc-addr">Домодедово, территория Триколор, 11</div></div>
+              <div class="loc-item"><div class="loc-name">Тула (склад 1)</div><div class="loc-addr">ул. Щегловская Засека, д. 31А</div></div>
+              <div class="loc-item"><div class="loc-name">Тула (склад 2)</div><div class="loc-addr">ул. Луначарского, дом 76</div></div>
+              <div class="loc-item"><div class="loc-name">Рязань</div><div class="loc-addr">ул. Ряжское шоссе, д. 20</div></div>
+              <div class="loc-item"><div class="loc-name">Истра</div><div class="loc-addr">д. Покровское, Центральная улица, 27 стр.2</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="form-card">
+          <div class="form-title">Форма обратной связи</div>
+          <div class="fg"><label class="flbl">Ваше имя</label><input class="finp" id="c-name" placeholder="Иван Иванов"></div>
+          <div class="fg"><label class="flbl">Телефон</label><input class="finp" id="c-phone" placeholder="+7 (___) ___-__-__"></div>
+          <div class="fg"><label class="flbl">Комментарий</label><textarea class="finp" id="c-msg" rows="3" placeholder="Ваш вопрос или пожелание..." style="resize:vertical"></textarea></div>
+          <p style="font-size:11px;color:var(--ink3);margin-bottom:14px">Нажимая кнопку «Отправить», вы соглашаетесь на обработку персональных данных.</p>
+          <button class="btn-solid" style="width:100%;padding:13px;font-size:15px;border-radius:12px" onclick="sendForm()">Отправить</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ═══ CART ═══ -->
+<div class="view" id="view-cart">
+  <div class="cart-page">
+    <div style="padding:36px 48px 0;display:flex;align-items:center;gap:16px">
+      <span style="cursor:pointer;color:var(--ink3);font-size:14px" onclick="history.back()">← Назад</span>
+      <h1 style="font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:.5px">Корзина</h1>
+    </div>
+    <div id="cart-content" style="padding:0 0"></div>
+  </div>
+</div>
+
+<!-- ═══ CHECKOUT ═══ -->
+<div class="view" id="view-checkout">
+  <div class="co-page">
+    <div style="padding:36px 48px 0"><h1 style="font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:.5px">Оформление заказа</h1></div>
+    <div class="co-layout">
+      <div>
+        <div class="scard">
+          <div class="scard-num">1</div>
+          <div class="scard-title">Адрес самовывоза</div>
+          <div class="addr-list">
+            <div class="aopt on" onclick="pickAddr(0)"><div class="aopt-radio"><div class="aopt-dot"></div></div><div><div class="aopt-name">Главный склад — Домодедово</div><div class="aopt-street">территория Триколор, 11</div><div class="aopt-note">+7 (495) 229-40-05 · Пн–Пт 8:00–18:00</div></div></div>
+            <div class="aopt" onclick="pickAddr(1)"><div class="aopt-radio"><div class="aopt-dot"></div></div><div><div class="aopt-name">Склад — Тула (Щегловская Засека)</div><div class="aopt-street">ул. Щегловская Засека, д. 31А</div><div class="aopt-note">+7 (4872) 25-14-07</div></div></div>
+            <div class="aopt" onclick="pickAddr(2)"><div class="aopt-radio"><div class="aopt-dot"></div></div><div><div class="aopt-name">Склад — Тула (Луначарского)</div><div class="aopt-street">ул. Луначарского, дом 76</div><div class="aopt-note">+7 (4872) 25-14-07</div></div></div>
+            <div class="aopt" onclick="pickAddr(3)"><div class="aopt-radio"><div class="aopt-dot"></div></div><div><div class="aopt-name">Склад — Рязань</div><div class="aopt-street">ул. Ряжское шоссе, д. 20</div></div></div>
+            <div class="aopt" onclick="pickAddr(4)"><div class="aopt-radio"><div class="aopt-dot"></div></div><div><div class="aopt-name">Склад — Истра</div><div class="aopt-street">д. Покровское, Центральная ул., 27 стр.2</div></div></div>
+          </div>
+        </div>
+        <div class="scard">
+          <div class="scard-num">2</div>
+          <div class="scard-title">Дата и время получения</div>
+          <div class="fg"><label class="flbl">Дата</label><input type="date" class="finp" id="co-date" style="max-width:220px"></div>
+          <label class="flbl" style="display:block;margin-bottom:10px">Доступные временны́е слоты</label>
+          <div class="time-grid">
+            <div class="tslot on" onclick="pickTime(this)">08:00–09:00</div>
+            <div class="tslot" onclick="pickTime(this)">09:00–10:00</div>
+            <div class="tslot busy">10:00–11:00</div>
+            <div class="tslot" onclick="pickTime(this)">11:00–12:00</div>
+            <div class="tslot" onclick="pickTime(this)">12:00–13:00</div>
+            <div class="tslot busy">13:00–14:00</div>
+            <div class="tslot" onclick="pickTime(this)">14:00–15:00</div>
+            <div class="tslot" onclick="pickTime(this)">15:00–16:00</div>
+            <div class="tslot" onclick="pickTime(this)">16:00–17:00</div>
+          </div>
+        </div>
+        <div class="scard">
+          <div class="scard-num">3</div>
+          <div class="scard-title">Контактные данные</div>
+          <div class="frow"><div class="fg"><label class="flbl">Имя</label><input class="finp" id="co-nm" placeholder="Иван"></div><div class="fg"><label class="flbl">Фамилия</label><input class="finp" id="co-ln" placeholder="Иванов"></div></div>
+          <div class="fg"><label class="flbl">Телефон</label><input class="finp" id="co-ph" placeholder="+7 (___) ___-__-__"></div>
+          <div class="fg"><label class="flbl">Комментарий</label><textarea class="finp" rows="3" placeholder="Дополнительная информация..." style="resize:vertical"></textarea></div>
+        </div>
+      </div>
+      <div>
+        <div class="csum">
+          <div class="csum-title">Ваш заказ</div>
+          <div id="co-items"></div>
+          <div id="co-rows"></div>
+          <button class="btn-full btn-full-main" onclick="placeOrder()">Оформить заказ</button>
+          <button class="btn-full btn-full-out" style="margin-top:8px" onclick="go('cart')">← Изменить корзину</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ORDERS ═══ -->
+<div class="view" id="view-orders">
+  <div class="ord-page">
+    <div style="padding:36px 48px 0;display:flex;align-items:center;justify-content:space-between">
+      <h1 style="font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:.5px">Мои заказы</h1>
+      <button class="btn-solid" style="padding:11px 24px;font-size:14px" onclick="go('catalogue')">+ Новый заказ</button>
+    </div>
+    <div class="ord-wrap" id="ord-wrap"></div>
+  </div>
+</div>
+
+<!-- ═══ AUTH ═══ -->
+<div class="view" id="view-auth">
+  <div class="auth-page">
+    <div class="auth-card ani">
+      <div class="auth-logo">ООО ЛиСТ</div>
+      <div class="auth-sub2">Напитки оптом · Складское предприятие</div>
+      <div class="auth-tabs">
+        <div class="a-tab on" onclick="atab('l')">Войти</div>
+        <div class="a-tab" onclick="atab('r')">Регистрация</div>
+      </div>
+      <div id="a-login">
+        <div class="a-title">С возвращением!</div>
+        <div class="a-hint">Введите данные вашего аккаунта</div>
+        <div class="fg"><label class="flbl">Телефон</label><input class="finp" id="l-phone" placeholder="+7 (___) ___-__-__"></div>
+        <div class="fg"><label class="flbl">Пароль</label><input class="finp" type="password" id="l-pass" placeholder="••••••••"></div>
+        <div style="text-align:right;margin-bottom:16px"><span class="a-link" style="font-size:13px">Забыли пароль?</span></div>
+        <button class="btn-solid" style="width:100%;padding:13px;font-size:15px;border-radius:12px" onclick="doLogin()">Войти</button>
+        <div class="a-divider"><div class="a-div-line"></div><div class="a-div-txt">или</div><div class="a-div-line"></div></div>
+        <div style="text-align:center;font-size:14px;color:var(--ink3)">Нет аккаунта? <span class="a-link" onclick="atab('r')">Зарегистрироваться</span></div>
+      </div>
+      <div id="a-reg" style="display:none">
+        <div class="a-title">Создать аккаунт</div>
+        <div class="a-hint">Заполните данные для регистрации</div>
+        <div class="frow"><div class="fg"><label class="flbl">Имя</label><input class="finp" id="r-nm" placeholder="Иван"></div><div class="fg"><label class="flbl">Фамилия</label><input class="finp" id="r-ln" placeholder="Иванов"></div></div>
+        <div class="fg"><label class="flbl">Телефон</label><input class="finp" id="r-ph" placeholder="+7 (___) ___-__-__"></div>
+        <div class="fg"><label class="flbl">Пароль</label><input class="finp" type="password" id="r-pass" placeholder="Минимум 8 символов"></div>
+        <div class="fg"><label class="flbl">Подтверждение пароля</label><input class="finp" type="password" id="r-pass2" placeholder="••••••••"></div>
+        <button class="btn-solid" style="width:100%;padding:13px;font-size:15px;border-radius:12px" onclick="doReg()">Зарегистрироваться</button>
+        <div style="text-align:center;font-size:14px;color:var(--ink3);margin-top:16px">Уже есть аккаунт? <span class="a-link" onclick="atab('l')">Войти</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PROFILE ═══ -->
+<div class="view" id="view-profile">
+  <div class="prof-page">
+    <div class="prof-layout">
+      <div class="prof-side">
+        <div class="p-avatar" id="p-av">ИИ</div>
+        <div class="p-name" id="p-nm">Иван Иванов</div>
+        <div class="p-phone" id="p-ph">+7 (495) 000-00-00</div>
+        <div class="smenu">
+          <div class="sitem on" onclick="psec('data')">👤 Личные данные</div>
+          <div class="sitem" onclick="psec('orders')">📦 Мои заказы</div>
+          <div class="sitem" onclick="psec('security')">🔒 Безопасность</div>
+        </div>
+      </div>
+      <div id="p-main"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="moverlay" id="pmodal" onclick="cmodal(event)">
+  <div class="modal"><button class="mcls" onclick="document.getElementById('pmodal').classList.remove('open')" aria-label="Закрыть">✕</button><div id="mcontent"></div></div>
+</div>
+
+<script>
+// ═══ DATA ═══
+const PRODS=[
+  {id:1,cat:'wine',name:'Каберне Совиньон',brand:'Фанагория',desc:'Выдержанное красное сухое вино с нотами чёрной смородины, ежевики и ванили. Танинное, с долгим послевкусием.',price:490,unit:'бут. 0.75л',emoji:'🍷',badge:'Хит',color:'rgba(123,45,94,.09)',catColor:'#7B2D5E',attrs:{Крепость:'13.5%',Объём:'0.75 л',Страна:'Россия',Тип:'Красное сухое'}},
+  {id:2,cat:'wine',name:'Шардоне',brand:'Абрау-Дюрсо',desc:'Элегантное белое вино с ароматом зелёного яблока, персика и цветов. Свежее и гармоничное.',price:380,unit:'бут. 0.75л',emoji:'🥂',badge:null,color:'rgba(200,146,10,.08)',catColor:'#A07010',attrs:{Крепость:'12.5%',Объём:'0.75 л',Страна:'Россия',Тип:'Белое сухое'}},
+  {id:3,cat:'wine',name:'Розе Брют',brand:'Наследие Мастера',desc:'Игристое розовое вино с ароматом клубники и розы. Мелкие пузырьки, свежий финиш.',price:620,unit:'бут. 0.75л',emoji:'🍾',badge:'Новинка',color:'rgba(200,80,120,.08)',catColor:'#C05080',attrs:{Крепость:'11.5%',Объём:'0.75 л',Страна:'Россия',Тип:'Розовое игристое'}},
+  {id:4,cat:'wine',name:'Совиньон Блан',brand:'Лефкадия',desc:'Сухое белое вино с ярким ароматом крыжовника, грейпфрута и свежей травы.',price:520,unit:'бут. 0.75л',emoji:'🍷',badge:null,color:'rgba(42,140,60,.08)',catColor:'#2A8C3C',attrs:{Крепость:'13%',Объём:'0.75 л',Страна:'Россия',Тип:'Белое сухое'}},
+  {id:5,cat:'beer',name:'Балтика №3',brand:'Балтика',desc:'Классическое светлое пиво с чистым солодовым вкусом и лёгкой хмелевой горчинкой.',price:95,unit:'бан. 0.5л',emoji:'🍺',badge:'Хит',color:'rgba(200,135,10,.09)',catColor:'#A06008',attrs:{Крепость:'4.8%',Объём:'0.5 л',Страна:'Россия',Тип:'Светлое'}},
+  {id:6,cat:'beer',name:'Жигулёвское',brand:'Жигули',desc:'Традиционное российское пиво. Лёгкое, освежающее, с характерным солодовым ароматом.',price:85,unit:'бан. 0.45л',emoji:'🍻',badge:null,color:'rgba(180,120,10,.08)',catColor:'#B47800',attrs:{Крепость:'4.5%',Объём:'0.45 л',Страна:'Россия',Тип:'Светлое'}},
+  {id:7,cat:'beer',name:'Heineken',brand:'Heineken',desc:'Премиальное нидерландское лагер-пиво. Чистый вкус, лёгкая горчинка, освежающий финиш.',price:140,unit:'бан. 0.5л',emoji:'🍺',badge:null,color:'rgba(26,100,40,.08)',catColor:'#1A6428',attrs:{Крепость:'5%',Объём:'0.5 л',Страна:'Нидерланды',Тип:'Светлое лагер'}},
+  {id:8,cat:'beer',name:'Крафт ИПА',brand:'AF Brew',desc:'Насыщенное крафтовое пиво с обильным хмелением, тропическими и цитрусовыми нотами.',price:220,unit:'бот. 0.33л',emoji:'🍺',badge:'Крафт',color:'rgba(180,90,20,.08)',catColor:'#B45A14',attrs:{Крепость:'6.5%',Объём:'0.33 л',Страна:'Россия',Тип:'Индийский Пэйл Эль'}},
+  {id:9,cat:'soda',name:'Coca-Cola',brand:'Coca-Cola HBC',desc:'Культовый газированный напиток с неповторимым вкусом. Поставляется компанией Coca-Cola HBC.',price:89,unit:'бут. 1.5л',emoji:'🥤',badge:'Хит',color:'rgba(180,30,30,.07)',catColor:'#B41E1E',attrs:{Объём:'1.5 л',Сахар:'10.6г/100мл',Страна:'Россия',Тип:'Лимонад'}},
+  {id:10,cat:'soda',name:'Sprite',brand:'Coca-Cola HBC',desc:'Освежающий лимонно-лаймовый напиток. Прозрачный, игристый, без кофеина.',price:79,unit:'бут. 1.5л',emoji:'🧃',badge:null,color:'rgba(26,92,56,.07)',catColor:'#1A5C38',attrs:{Объём:'1.5 л',Сахар:'6.6г/100мл',Страна:'Россия',Тип:'Лимонад'}},
+  {id:11,cat:'soda',name:'Добрый Яблоко',brand:'Coca-Cola HBC',desc:'Натуральный яблочный сок с мякотью. Без консервантов, богатый витаминами.',price:65,unit:'пак. 1л',emoji:'🍎',badge:null,color:'rgba(150,100,20,.07)',catColor:'#966414',attrs:{Объём:'1 л',Сахар:'естественный',Страна:'Россия',Тип:'Сок'}},
+  {id:12,cat:'soda',name:'Red Bull',brand:'Red Bull GmbH',desc:'Энергетический напиток с таурином и кофеином. Поддерживает концентрацию и энергию.',price:130,unit:'бан. 0.25л',emoji:'⚡',badge:null,color:'rgba(200,146,10,.08)',catColor:'#C89200',attrs:{Объём:'0.25 л',Кофеин:'80мг',Страна:'Австрия',Тип:'Энергетик'}},
+  {id:13,cat:'water',name:'Acqua Panna',brand:'Acqua Panna',desc:'Натуральная минеральная вода без газа из Тосканы. Мягкая, сбалансированный минеральный состав.',price:120,unit:'бут. 0.75л',emoji:'💧',badge:null,color:'rgba(26,74,107,.07)',catColor:'#1A4A6B',attrs:{Объём:'0.75 л',Минерализация:'низкая',Страна:'Италия',Тип:'Негазированная'}},
+  {id:14,cat:'water',name:'Архыз',brand:'Архыз',desc:'Природная горная вода с Кавказа. Слабоминерализованная, идеальна для ежедневного употребления.',price:45,unit:'бут. 1.5л',emoji:'🏔️',badge:'Хит',color:'rgba(26,74,107,.07)',catColor:'#1A4A6B',attrs:{Объём:'1.5 л',Минерализация:'200-500 мг/л',Страна:'Россия',Тип:'Негазированная'}},
+  {id:15,cat:'water',name:'Боржоми',brand:'Боржоми',desc:'Природная минеральная вода с высоким содержанием минералов. Лечебно-столовая.',price:95,unit:'бут. 0.5л',emoji:'💦',badge:null,color:'rgba(26,74,107,.07)',catColor:'#1A4A6B',attrs:{Объём:'0.5 л',Минерализация:'5000-7500 мг/л',Страна:'Грузия',Тип:'Газированная'}},
+  {id:16,cat:'water',name:'Святой Источник',brand:'Nestle',desc:'Российская питьевая вода высшей категории. Обогащена фтором для защиты зубов.',price:35,unit:'бут. 1.5л',emoji:'💧',badge:null,color:'rgba(26,74,107,.07)',catColor:'#1A4A6B',attrs:{Объём:'1.5 л',Минерализация:'низкая',Страна:'Россия',Тип:'Негазированная'}},
+];
+const ADDRS=['Домодедово, тер. Триколор, 11','Тула, ул. Щегловская Засека, 31А','Тула, ул. Луначарского, 76','Рязань, ул. Ряжское шоссе, 20','Истра, д. Покровское, Центральная, 27с2'];
+const CATNAMES={wine:'Вино',beer:'Пиво',soda:'Газировки',water:'Вода'};
+
+let cart={}, curCat='all', srtMode='', orders=[], user=null, selAddr=0;
+
+// ═══ NAV ═══
+function go(v){
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.querySelectorAll('.nav-lnk').forEach(x=>x.classList.remove('on'));
+  const map={home:0,catalogue:1,services:2,tariffs:3,about:4,contacts:5};
+  if(map[v]!==undefined) document.querySelectorAll('.nav-lnk')[map[v]].classList.add('on');
+  const fn={catalogue:rp,cart:renderCart,checkout:renderCheckout,orders:renderOrds,profile:renderProfile,services:()=>{},tariffs:()=>{},about:()=>{}};
+  if(fn[v]) fn[v]();
+  window.scrollTo(0,0);
+}
+
+// ═══ CATALOGUE ═══
+function fcat(c){
+  curCat=c;
+  document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('on'));
+  const i={all:0,wine:1,beer:2,soda:3,water:4}[c];
+  document.querySelectorAll('.ftab')[i].classList.add('on');
+  rp();
+}
+function srt(m){srtMode=m;rp();}
+function filtered(){
+  let l=PRODS.filter(p=>curCat==='all'||p.cat===curCat);
+  const q=(document.getElementById('si')||{value:''}).value.toLowerCase();
+  if(q) l=l.filter(p=>p.name.toLowerCase().includes(q)||p.brand.toLowerCase().includes(q));
+  if(srtMode==='pa') l.sort((a,b)=>a.price-b.price);
+  else if(srtMode==='pd') l.sort((a,b)=>b.price-a.price);
+  else if(srtMode==='nm') l.sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+  return l;
+}
+function rp(){
+  const g=document.getElementById('pgrid'); if(!g) return;
+  const l=filtered();
+  if(!l.length){g.innerHTML='<div class="no-res"><div class="no-res-icon">🔍</div><div style="font-size:16px;font-weight:500">Ничего не найдено</div></div>';return;}
+  g.innerHTML=l.map(p=>{
+    const ic=cart[p.id]||0;
+    return `<div class="pc ani" onclick="openProd(${p.id})">
+      <div class="pc-img" style="background:${p.color}">
+        ${p.badge?`<span class="pc-badge" style="background:${p.catColor};color:#fff">${p.badge}</span>`:''}
+        ${p.emoji}
+      </div>
+      <div class="pc-body">
+        <div class="pc-cat" style="color:${p.catColor}">${CATNAMES[p.cat]}</div>
+        <div class="pc-name">${p.name}</div>
+        <div class="pc-brand">${p.brand}</div>
+        <div class="pc-desc">${p.desc.slice(0,75)}…</div>
+        <div class="pc-foot">
+          <div><div class="pc-price" style="color:var(--green)">${p.price}₽</div><div class="pc-unit">${p.unit}</div></div>
+          ${ic?`<div class="qty-wrap" onclick="event.stopPropagation()"><button class="qb" onclick="cq(${p.id},-1)">−</button><span class="qn">${ic}</span><button class="qb" onclick="cq(${p.id},1)">+</button></div>`
+              :`<button class="btn-add" onclick="event.stopPropagation();addC(${p.id})">В корзину</button>`}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══ MODAL ═══
+function openProd(id){
+  const p=PRODS.find(x=>x.id===id), ic=cart[p.id]||0;
+  document.getElementById('mcontent').innerHTML=`
+    <div class="m-img" style="background:${p.color}">${p.emoji}</div>
+    <div class="m-body">
+      <div class="m-cat" style="color:${p.catColor}">${CATNAMES[p.cat]}</div>
+      <div class="m-name">${p.name}</div>
+      <div class="m-brand">${p.brand}</div>
+      <div class="m-price-row"><div class="m-price">${p.price}₽</div><div class="m-per">/ ${p.unit}</div></div>
+      <div class="m-desc">${p.desc}</div>
+      <div class="m-attrs">${Object.entries(p.attrs).map(([k,v])=>`<div class="m-attr"><div class="m-albl">${k}</div><div class="m-aval">${v}</div></div>`).join('')}</div>
+      <div class="m-foot">
+        ${ic?`<div class="qty-wrap"><button class="qb" onclick="cq(${p.id},-1);openProd(${p.id})">−</button><span class="qn">${ic}</span><button class="qb" onclick="cq(${p.id},1);openProd(${p.id})">+</button></div><span style="font-size:13px;color:var(--ink3)">В корзине: ${ic} шт.</span>`
+            :`<button class="btn-solid" style="flex:1;padding:13px;font-size:15px;border-radius:12px" onclick="addC(${p.id});openProd(${p.id})">Добавить в корзину</button>`}
+      </div>
+    </div>`;
+  document.getElementById('pmodal').classList.add('open');
+}
+function cmodal(e){if(e.target.id==='pmodal') document.getElementById('pmodal').classList.remove('open');}
+
+// ═══ CART LOGIC ═══
+function addC(id){cart[id]=(cart[id]||0)+1;updBadge();toast('✓','Добавлено в корзину');rp();}
+function cq(id,d){cart[id]=(cart[id]||0)+d;if(cart[id]<=0)delete cart[id];updBadge();rp();renderCart();}
+function updBadge(){const t=Object.values(cart).reduce((a,b)=>a+b,0),d=document.getElementById('cdot');d.textContent=t;d.style.display=t?'flex':'none';}
+function cartTotal(){return Object.entries(cart).reduce((s,[id,q])=>s+PRODS.find(p=>p.id==id).price*q,0);}
+
+function renderCart(){
+  const el=document.getElementById('cart-content'); if(!el) return;
+  const its=Object.entries(cart);
+  if(!its.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">🛒</div><div class="empty-ttl">Корзина пуста</div><p style="margin-bottom:28px;color:var(--ink3)">Добавьте товары из каталога</p><button class="btn-solid" style="padding:12px 32px;font-size:15px;border-radius:10px" onclick="go('catalogue')">Открыть каталог</button></div>`;return;}
+  const total=cartTotal();
+  el.innerHTML=`<div class="clayout">
+    <div class="cart-list">
+      ${its.map(([id,q])=>{const p=PRODS.find(x=>x.id==id);return`<div class="ci"><div class="ci-emoji">${p.emoji}</div><div class="ci-info"><div class="ci-name">${p.name}</div><div class="ci-meta">${p.brand} · ${p.unit} · ${p.price}₽/шт.</div></div><div class="qty-wrap"><button class="qb" onclick="cq(${id},-1)">−</button><span class="qn">${q}</span><button class="qb" onclick="cq(${id},1)">+</button></div><div class="ci-price">${p.price*q}₽</div><button class="ci-del" onclick="delC(${id})" aria-label="Удалить">✕</button></div>`;}).join('')}
+    </div>
+    <div class="csum">
+      <div class="csum-title">Итого</div>
+      <div class="crow"><span class="crow-lbl">Позиций</span><span class="crow-val">${its.length} шт.</span></div>
+      <div class="crow"><span class="crow-lbl">Товаров</span><span class="crow-val">${its.reduce((s,[,q])=>s+q,0)} шт.</span></div>
+      <div class="crow"><span class="crow-lbl">Сумма</span><span class="crow-total">${total}₽</span></div>
+      <button class="btn-full btn-full-main" onclick="go('checkout')">Оформить заказ →</button>
+      <button class="btn-full btn-full-out" style="margin-top:8px" onclick="go('catalogue')">Продолжить покупки</button>
+      <button class="btn-full btn-full-danger" onclick="clearC()">Очистить корзину</button>
+    </div>
+  </div>`;
+}
+function delC(id){delete cart[id];updBadge();renderCart();}
+function clearC(){cart={};updBadge();renderCart();}
+
+// ═══ CHECKOUT ═══
+function pickAddr(i){selAddr=i;document.querySelectorAll('.aopt').forEach((e,j)=>e.classList.toggle('on',j===i));}
+function pickTime(el){document.querySelectorAll('.tslot').forEach(s=>s.classList.remove('on'));el.classList.add('on');}
+function renderCheckout(){
+  const its=Object.entries(cart), total=cartTotal();
+  const ci=document.getElementById('co-items'); if(!ci) return;
+  ci.innerHTML=its.map(([id,q])=>{const p=PRODS.find(x=>x.id==id);return`<div class="crow"><span class="crow-lbl">${p.emoji} ${p.name} ×${q}</span><span class="crow-val">${p.price*q}₽</span></div>`;}).join('');
+  document.getElementById('co-rows').innerHTML=`<div class="crow" style="border-top:1px solid var(--bg2);margin-top:8px;padding-top:14px"><span class="crow-lbl" style="font-weight:700">К оплате</span><span class="crow-total">${total}₽</span></div>`;
+  const td=new Date().toISOString().split('T')[0];
+  const dd=document.getElementById('co-date'); if(dd){dd.min=td;dd.value=td;}
+}
+function placeOrder(){
+  if(!user){toast('⚠️','Войдите для оформления заказа');go('auth');return;}
+  const its=Object.entries(cart).map(([id,q])=>({p:PRODS.find(x=>x.id==id),q}));
+  if(!its.length){toast('⚠️','Корзина пуста');return;}
+  const ts=document.querySelector('.tslot.on'), dd=document.getElementById('co-date');
+  const o={id:'#'+Math.floor(Math.random()*90000+10000),date:new Date().toLocaleDateString('ru-RU'),pDate:dd?dd.value:'—',pTime:ts?ts.textContent:'не выбрано',addr:ADDRS[selAddr],items:its.map(x=>({name:x.p.name,emoji:x.p.emoji,q:x.q,price:x.p.price})),total:cartTotal(),status:'new'};
+  orders.unshift(o);cart={};updBadge();
+  toast('🎉','Заказ '+o.id+' оформлен!');go('orders');
+}
+
+// ═══ ORDERS ═══
+const SLBL={new:'Новый',processing:'В обработке',ready:'Готов к выдаче',done:'Выдан'};
+const SCL={new:'sb-new',processing:'sb-proc',ready:'sb-ready',done:'sb-done'};
+const SSTEP={new:1,processing:2,ready:3,done:4};
+function renderOrds(){
+  const el=document.getElementById('ord-wrap'); if(!el) return;
+  if(!orders.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-ttl">Заказов пока нет</div><p style="margin-bottom:28px;color:var(--ink3)">Оформите первый заказ из каталога</p><button class="btn-solid" style="padding:12px 32px;font-size:15px;border-radius:10px" onclick="go('catalogue')">Открыть каталог</button></div>`;return;}
+  const sls=['Принят','Обработка','Готов','Выдан'];
+  el.innerHTML=orders.map(o=>{const st=SSTEP[o.status];return`<div class="ocard">
+    <div class="ocard-head"><div><div class="ocard-num">Заказ ${o.id}</div><div class="ocard-meta">от ${o.date} · Самовывоз: ${o.pDate}, ${o.pTime}</div></div><span class="sbadge ${SCL[o.status]}">${SLBL[o.status]}</span></div>
+    <div class="oprog">${sls.map((l,i)=>`<div class="opstep ${i+1<st?'done':''} ${i+1===st?'cur':''}"><div class="opstep-dot">${i+1<st?'✓':i+1}</div><div class="opstep-lbl">${l}</div></div>`).join('')}</div>
+    <div style="font-size:12px;color:var(--ink3);margin-bottom:10px">📍 ${o.addr}</div>
+    <div class="oitems">${o.items.map(i=>`<span class="oitem-chip">${i.emoji} ${i.name} ×${i.q}</span>`).join('')}</div>
+    <div class="ocard-foot"><div><div class="o-total">${o.total}₽</div><div class="o-addr">${o.addr}</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-repeat" onclick="repOrder('${o.id}')">↻ Повторить заказ</button>${o.status==='new'?`<button class="btn-cancel" onclick="cancelOrd('${o.id}')">Отменить</button>`:''}</div></div>
+  </div>`;}).join('');
+}
+function repOrder(id){
+  const o=orders.find(x=>x.id===id);
+  o.items.forEach(i=>{const p=PRODS.find(x=>x.name===i.name);if(p) cart[p.id]=(cart[p.id]||0)+i.q;});
+  updBadge();toast('✓','Товары добавлены в корзину');go('cart');
+}
+function cancelOrd(id){const o=orders.find(x=>x.id===id);if(o) o.status='done';renderOrds();}
+
+// ═══ AUTH ═══
+function atab(t){
+  document.querySelectorAll('.a-tab').forEach((el,i)=>el.classList.toggle('on',(t==='l'&&i===0)||(t==='r'&&i===1)));
+  document.getElementById('a-login').style.display=t==='l'?'block':'none';
+  document.getElementById('a-reg').style.display=t==='r'?'block':'none';
+}
+function doLogin(){
+  const ph=document.getElementById('l-phone').value.trim(), p=document.getElementById('l-pass').value;
+  if(!ph||!p){toast('⚠️','Заполните все поля');return;}
+  user={name:'Иван',lastname:'Иванов',phone:ph};
+  updAuthUI();toast('👋','Добро пожаловать!');go('catalogue');
+}
+function doReg(){
+  const nm=document.getElementById('r-nm').value.trim(), ln=document.getElementById('r-ln').value.trim();
+  const ph=document.getElementById('r-ph').value.trim();
+  const p=document.getElementById('r-pass').value, p2=document.getElementById('r-pass2').value;
+  if(!nm||!ph||!p){toast('⚠️','Заполните обязательные поля');return;}
+  if(p.length<8){toast('⚠️','Пароль — минимум 8 символов');return;}
+  if(p!==p2){toast('⚠️','Пароли не совпадают');return;}
+  user={name:nm,lastname:ln,phone:ph};
+  updAuthUI();toast('🎉','Регистрация успешна!');go('catalogue');
+}
+function doLogout(){user=null;updAuthUI();go('home');toast('👋','Вы вышли из аккаунта');}
+function updAuthUI(){
+  document.getElementById('nauth').style.display=user?'none':'block';
+  document.getElementById('nlogout').style.display=user?'block':'none';
+  document.getElementById('norders').style.display=user?'block':'none';
+  if(user){
+    const av=(user.name[0]+(user.lastname?user.lastname[0]:'')).toUpperCase();
+    document.getElementById('p-av').textContent=av;
+    document.getElementById('p-nm').textContent=user.name+' '+(user.lastname||'');
+    document.getElementById('p-ph').textContent=user.phone||'+7 (495) 000-00-00';
+  }
+}
+
+// ═══ PROFILE ═══
+function psec(s){
+  document.querySelectorAll('.sitem').forEach((el,i)=>el.classList.toggle('on',['data','orders','security'][i]===s));
+  const el=document.getElementById('p-main'); if(!el) return;
+  if(s==='data'){el.innerHTML=`<div class="scard"><div class="scard-title">Личные данные</div><div class="frow"><div class="fg"><label class="flbl">Имя</label><input class="finp" value="${user?user.name:''}"></div><div class="fg"><label class="flbl">Фамилия</label><input class="finp" value="${user?user.lastname:''}"></div></div><div class="fg"><label class="flbl">Телефон</label><input class="finp" value="${user?user.phone:''}"></div><button class="btn-solid" style="padding:11px 28px;font-size:14px;border-radius:10px" onclick="toast('✓','Данные сохранены')">Сохранить</button></div>`;}
+  else if(s==='orders'){el.innerHTML='<div id="ord-wrap"></div>';renderOrds();}
+  else{el.innerHTML=`<div class="scard"><div class="scard-title">Безопасность</div><div class="fg"><label class="flbl">Текущий пароль</label><input class="finp" type="password" placeholder="••••••••"></div><div class="fg"><label class="flbl">Новый пароль</label><input class="finp" type="password" placeholder="Минимум 8 символов"></div><div class="fg"><label class="flbl">Подтверждение</label><input class="finp" type="password" placeholder="••••••••"></div><button class="btn-solid" style="padding:11px 28px;font-size:14px;border-radius:10px" onclick="toast('✓','Пароль изменён')">Изменить</button></div>`;}
+}
+function renderProfile(){if(!user){go('auth');return;}psec('data');}
+
+// ═══ CONTACTS FORM ═══
+function sendForm(){
+  const n=document.getElementById('c-name').value.trim();
+  const p=document.getElementById('c-phone').value.trim();
+  if(!n||!p){toast('⚠️','Заполните имя и телефон');return;}
+  toast('✓','Заявка отправлена! Мы свяжемся с вами в ближайшее время.');
+  ['c-name','c-phone','c-msg'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+}
+
+// ═══ CALCULATOR ═══
+function calcStorage(){
+  const r=parseInt(document.getElementById('pal-type').value)||32;
+  const c=parseInt(document.getElementById('pal-cnt').value)||0;
+  const d=parseInt(document.getElementById('pal-days').value)||0;
+  const res=r*c*d;
+  const el=document.getElementById('calc-result');
+  if(el) el.textContent=res.toLocaleString('ru-RU')+'₽';
+}
+
+// ═══ TOAST ═══
+function toast(ic,msg){
+  document.getElementById('tic').textContent=ic;
+  document.getElementById('tmsg').textContent=msg;
+  const t=document.getElementById('toast');
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t=setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+// ═══ INIT ═══
+(function(){
+  rp();
+  const td=new Date().toISOString().split('T')[0];
+  const dd=document.getElementById('co-date'); if(dd){dd.min=td;dd.value=td;}
+  orders.push({id:'#48291',date:'15.01.2024',pDate:'16.01.2024',pTime:'10:00–11:00',addr:ADDRS[0],items:[{name:'Каберне Совиньон',emoji:'🍷',q:12,price:490},{name:'Архыз',emoji:'🏔️',q:24,price:45}],total:6960,status:'done'});
+  orders.push({id:'#48154',date:'12.01.2024',pDate:'13.01.2024',pTime:'14:00–15:00',addr:ADDRS[1],items:[{name:'Балтика №3',emoji:'🍺',q:48,price:95},{name:'Coca-Cola',emoji:'🥤',q:12,price:89}],total:5628,status:'ready'});
+})();
+</script>
+</body>
+</html>

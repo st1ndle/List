@@ -1513,6 +1513,10 @@ textarea {
   margin-bottom: 26px
 }
 
+.auth-tabs-sub {
+  margin-bottom: 16px
+}
+
 .a-tab {
   flex: 1;
   padding: 9px;

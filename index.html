@@ -521,14 +521,19 @@
     <div class="auth-card ani">
       <div class="auth-logo">ООО ЛиСТ</div>
       <div class="auth-sub2">Напитки оптом · Складское предприятие</div>
-      <div class="auth-tabs">
+      <div class="auth-tabs" id="auth-main-tabs">
         <div class="a-tab on" onclick="atab('l')">Войти</div>
         <div class="a-tab" onclick="atab('r')">Регистрация</div>
       </div>
       <div id="a-login">
         <div class="a-title">С возвращением!</div>
         <div class="a-hint">Введите данные вашего аккаунта</div>
-        <div class="fg"><label class="flbl">Телефон</label><input class="finp" id="l-phone" placeholder="+7 (___) ___-__-__"></div>
+        <div class="auth-tabs auth-tabs-sub">
+          <div class="a-tab a-tab-login on" onclick="loginMethodTab('email')">Почта</div>
+          <div class="a-tab a-tab-login" onclick="loginMethodTab('phone')">Телефон</div>
+        </div>
+        <div class="fg" id="l-email-wrap"><label class="flbl">Почта</label><input class="finp" id="l-email" placeholder="name@company.ru"></div>
+        <div class="fg" id="l-phone-wrap" style="display:none"><label class="flbl">Телефон</label><input class="finp" id="l-phone" placeholder="+7 (___) ___-__-__"></div>
         <div class="fg"><label class="flbl">Пароль</label><input class="finp" type="password" id="l-pass" placeholder="••••••••"></div>
         <div style="text-align:right;margin-bottom:16px"><span class="a-link" style="font-size:13px">Забыли пароль?</span></div>
         <button class="btn-solid" style="width:100%;padding:13px;font-size:15px;border-radius:12px" onclick="doLogin()">Войти</button>
@@ -539,6 +544,7 @@
         <div class="a-title">Создать аккаунт</div>
         <div class="a-hint">Заполните данные для регистрации</div>
         <div class="frow"><div class="fg"><label class="flbl">Имя</label><input class="finp" id="r-nm" placeholder="Иван"></div><div class="fg"><label class="flbl">Фамилия</label><input class="finp" id="r-ln" placeholder="Иванов"></div></div>
+        <div class="fg"><label class="flbl">Почта</label><input class="finp" id="r-email" placeholder="name@company.ru"></div>
         <div class="fg"><label class="flbl">Телефон</label><input class="finp" id="r-ph" placeholder="+7 (___) ___-__-__"></div>
         <div class="fg"><label class="flbl">Пароль</label><input class="finp" type="password" id="r-pass" placeholder="Минимум 8 символов"></div>
         <div class="fg"><label class="flbl">Подтверждение пароля</label><input class="finp" type="password" id="r-pass2" placeholder="••••••••"></div>

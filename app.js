@@ -216,26 +216,39 @@ function repOrder(id){
 function cancelOrd(id){const o=orders.find(x=>x.id===id);if(o) o.status='done';saveState();renderOrds();}
 
 // ═══ AUTH ═══
+let loginMethod='email';
+
 function atab(t){
-  document.querySelectorAll('.a-tab').forEach((el,i)=>el.classList.toggle('on',(t==='l'&&i===0)||(t==='r'&&i===1)));
+  document.querySelectorAll('#auth-main-tabs .a-tab').forEach((el,i)=>el.classList.toggle('on',(t==='l'&&i===0)||(t==='r'&&i===1)));
   document.getElementById('a-login').style.display=t==='l'?'block':'none';
   document.getElementById('a-reg').style.display=t==='r'?'block':'none';
 }
+function loginMethodTab(method){
+  loginMethod=method;
+  document.querySelectorAll('.a-tab-login').forEach((el,i)=>el.classList.toggle('on',(method==='email'&&i===0)||(method==='phone'&&i===1)));
+  document.getElementById('l-email-wrap').style.display=method==='email'?'block':'none';
+  document.getElementById('l-phone-wrap').style.display=method==='phone'?'block':'none';
+}
 function doLogin(){
-  const ph=document.getElementById('l-phone').value.trim(), p=document.getElementById('l-pass').value;
-  if(!ph||!p){toast('⚠️','Заполните все поля');return;}
-  user={name:'Иван',lastname:'Иванов',phone:ph};
+  const em=document.getElementById('l-email').value.trim();
+  const ph=document.getElementById('l-phone').value.trim();
+  const p=document.getElementById('l-pass').value;
+  const loginValue=loginMethod==='email'?em:ph;
+  if(!loginValue||!p){toast('⚠️','Заполните все поля');return;}
+  user={name:'Иван',lastname:'Иванов',phone:ph,email:em};
   saveState();
   updAuthUI();toast('👋','Добро пожаловать!');go('catalogue');
 }
 function doReg(){
   const nm=document.getElementById('r-nm').value.trim(), ln=document.getElementById('r-ln').value.trim();
+  const em=document.getElementById('r-email').value.trim();
   const ph=document.getElementById('r-ph').value.trim();
   const p=document.getElementById('r-pass').value, p2=document.getElementById('r-pass2').value;
-  if(!nm||!ph||!p){toast('⚠️','Заполните обязательные поля');return;}
+  if(!nm||!em||!ph||!p){toast('⚠️','Заполните обязательные поля');return;}
+  if(!/^\S+@\S+\.\S+$/.test(em)){toast('⚠️','Укажите корректную почту');return;}
   if(p.length<8){toast('⚠️','Пароль — минимум 8 символов');return;}
   if(p!==p2){toast('⚠️','Пароли не совпадают');return;}
-  user={name:nm,lastname:ln,phone:ph};
+  user={name:nm,lastname:ln,phone:ph,email:em};
   saveState();
   updAuthUI();toast('🎉','Регистрация успешна!');go('catalogue');
 }

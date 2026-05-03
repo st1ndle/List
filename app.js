@@ -596,12 +596,25 @@ async function handleRegister() {
  */
 async function handleLogout() {
   try {
-    await fetch('http://localhost:3000/api/auth/logout', { method: 'POST', credentials: 'include' });
-  } catch (e) { }
-  user = null;
-  updateAuthUI();
-  navigateToView('home');
-  showToast('👋', 'Вы вышли из аккаунта');
+    const res = await fetch('http://localhost:3000/api/auth/logout', { 
+      method: 'POST', 
+      credentials: 'include' 
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Ошибка выхода');
+
+    user = null;
+    updateAuthUI();
+    navigateToView('home');
+    showToast('👋', 'Вы вышли из аккаунта');
+  } catch (err) {
+    console.error('Logout error:', err);
+    // В случае ошибки на сервере всё равно сбрасываем локальное состояние для безопасности
+    user = null;
+    updateAuthUI();
+    navigateToView('home');
+    showToast('👋', 'Сессия завершена');
+  }
 }
 
 /**

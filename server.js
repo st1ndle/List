@@ -132,9 +132,17 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 app.post('/api/auth/logout', (req, res) => {
+  const userId = req.session.userId;
+  console.log(`\n--- /api/auth/logout ---`);
+  console.log(`User attempting logout: userId=${userId}`);
+
   req.session.destroy(err => {
-    if (err) return res.status(500).json({ error: 'Logout failed' });
+    if (err) {
+      console.error('Logout error:', err);
+      return res.status(500).json({ error: 'Logout failed' });
+    }
     res.clearCookie('diplom.sid');
+    console.log(`Logout successful for userId=${userId}`);
     res.json({ status: 'ok' });
   });
 });

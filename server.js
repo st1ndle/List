@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 
 const dbConfig = {
   user: process.env.DB_USER || 'sa',
-  password: process.env.DB_PASSWORD || 'Password',
+  password: process.env.DB_PASSWORD || 'StrongP@ssw0rd!',
   server: process.env.DB_HOST || 'localhost',
   port: Number(process.env.DB_PORT || 1433),
   database: process.env.DB_NAME || 'master',

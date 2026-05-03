@@ -147,7 +147,7 @@ app.get('/api/auth/me', async (req, res) => {
     console.log('Cookies:', req.headers.cookie);
     
     if (!req.session.userId) {
-      return res.status(401).json({ error: 'Not authenticated' });
+      return res.json({ user: null });
     }
     const p = await getPool();
     const result = await p.request()

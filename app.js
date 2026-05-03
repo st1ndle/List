@@ -720,12 +720,16 @@ async function checkAuthStatus() {
     const res = await fetch('http://localhost:3000/api/auth/me', { credentials: 'include' });
     if (res.ok) {
       const data = await res.json();
-      user = {
-        name: data.user.first_name,
-        lastname: data.user.last_name,
-        phone: data.user.phone,
-        email: data.user.email
-      };
+      if (data.user) {
+        user = {
+          name: data.user.first_name,
+          lastname: data.user.last_name,
+          phone: data.user.phone,
+          email: data.user.email
+        };
+      } else {
+        user = null;
+      }
     } else {
       user = null;
     }

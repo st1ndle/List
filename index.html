@@ -16,19 +16,19 @@
     <div class="nav-tagline">Напитки оптом · Складское предприятие</div>
   </div>
   <div class="nav-links">
-    <span class="nav-lnk on" onclick="go('home')">Главная</span>
-    <span class="nav-lnk" onclick="go('catalogue')">Каталог</span>
-    <span class="nav-lnk" onclick="go('services')">Услуги склада</span>
-    <span class="nav-lnk" onclick="go('tariffs')">Тарифы</span>
-    <span class="nav-lnk" onclick="go('about')">О компании</span>
-    <span class="nav-lnk" onclick="go('contacts')">Контакты</span>
+    <span class="nav-lnk on" onclick="navigateToView('home')">Главная</span>
+    <span class="nav-lnk" onclick="navigateToView('catalogue')">Каталог</span>
+    <span class="nav-lnk" onclick="navigateToView('services')">Услуги склада</span>
+    <span class="nav-lnk" onclick="navigateToView('tariffs')">Тарифы</span>
+    <span class="nav-lnk" onclick="navigateToView('about')">О компании</span>
+    <span class="nav-lnk" onclick="navigateToView('contacts')">Контакты</span>
   </div>
   <div class="nav-right">
     <span class="nav-phone">+7 (495) 229-40-05</span>
-    <button class="cart-btn" onclick="go('cart')" aria-label="Корзина">🛒<span class="cart-dot" id="cdot">0</span></button>
-    <button class="btn-ghost" onclick="go('orders')" id="norders" style="display:none">Мои заказы</button>
-    <button class="btn-solid" onclick="go('auth')" id="nauth">Войти</button>
-    <button class="btn-ghost" onclick="doLogout()" id="nlogout" style="display:none">Выйти</button>
+    <button class="cart-btn" onclick="navigateToView('cart')" aria-label="Корзина">🛒<span class="cart-dot" id="cdot">0</span></button>
+    <button class="btn-ghost" onclick="navigateToView('orders')" id="norders" style="display:none">Мои заказы</button>
+    <button class="btn-solid" onclick="navigateToView('auth')" id="nauth">Войти</button>
+    <button class="btn-ghost" onclick="handleLogout()" id="nlogout" style="display:none">Выйти</button>
   </div>
 </nav>
 
@@ -44,8 +44,8 @@
       <h1 class="hero-title">НАПИТКИ<br>ДЛЯ<br><em>ВАШЕГО</em><br>БИЗНЕСА</h1>
       <p class="hero-desc">ООО ЛиСТ — дистрибьюция и оптовая торговля напитками. Вино, пиво, газировки и вода со склада в Домодедово. Самовывоз и доставка по Москве и МО.</p>
       <div class="hero-btns">
-        <button class="btn-hero btn-hero-main" onclick="go('catalogue')">Открыть каталог</button>
-        <button class="btn-hero btn-hero-out" onclick="go('contacts')">Получить консультацию</button>
+        <button class="btn-hero btn-hero-main" onclick="navigateToView('catalogue')">Открыть каталог</button>
+        <button class="btn-hero btn-hero-out" onclick="navigateToView('contacts')">Получить консультацию</button>
       </div>
       <div class="hero-stats">
         <div class="hero-stat">
@@ -65,22 +65,22 @@
     <div class="hero-right">
       <div class="hero-badge"><div style="font-size:18px">от</div><div style="font-size:26px">32₽</div><div style="font-size:11px;letter-spacing:1px">сутки/пал.</div></div>
       <div class="hero-right-grid ani">
-        <div class="cat-pill" onclick="go('catalogue');fcat('wine')">
+        <div class="cat-pill" onclick="navigateToView('catalogue');filterByCategory('wine')">
           <div class="cat-pill-icon">🍷</div>
           <div><div class="cat-pill-name">Вино</div><div class="cat-pill-sub">Красное, белое, розовое, игристое</div></div>
           <div class="cat-pill-price">от 290₽</div>
         </div>
-        <div class="cat-pill" onclick="go('catalogue');fcat('beer')">
+        <div class="cat-pill" onclick="navigateToView('catalogue');filterByCategory('beer')">
           <div class="cat-pill-icon">🍺</div>
           <div><div class="cat-pill-name">Пиво</div><div class="cat-pill-sub">Светлое, тёмное, крафт</div></div>
           <div class="cat-pill-price">от 85₽</div>
         </div>
-        <div class="cat-pill" onclick="go('catalogue');fcat('soda')">
+        <div class="cat-pill" onclick="navigateToView('catalogue');filterByCategory('soda')">
           <div class="cat-pill-icon">🥤</div>
           <div><div class="cat-pill-name">Газировки</div><div class="cat-pill-sub">Лимонады, соки, энергетики</div></div>
           <div class="cat-pill-price">от 55₽</div>
         </div>
-        <div class="cat-pill" onclick="go('catalogue');fcat('water')">
+        <div class="cat-pill" onclick="navigateToView('catalogue');filterByCategory('water')">
           <div class="cat-pill-icon">💧</div>
           <div><div class="cat-pill-name">Вода</div><div class="cat-pill-sub">Газированная и негазированная</div></div>
           <div class="cat-pill-price">от 35₽</div>
@@ -197,8 +197,8 @@
       <h2 class="sec-title" style="color:#fff;margin:10px 0">Посмотрите наш склад</h2>
       <p style="color:rgba(255,255,255,.55);font-size:15px;margin-top:10px">Мы всегда готовы встретить вас и провести экскурсию по складскому комплексу в Домодедово.</p>
       <div style="display:flex;gap:12px;justify-content:center;margin-top:32px;flex-wrap:wrap">
-        <button class="btn-hero btn-hero-main" onclick="go('contacts')">Заказать звонок</button>
-        <button style="background:rgba(255,255,255,.1);color:#fff;border:1.5px solid rgba(255,255,255,.25);border-radius:10px;padding:14px 32px;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s" onclick="go('tariffs')">Тарифы</button>
+        <button class="btn-hero btn-hero-main" onclick="navigateToView('contacts')">Заказать звонок</button>
+        <button style="background:rgba(255,255,255,.1);color:#fff;border:1.5px solid rgba(255,255,255,.25);border-radius:10px;padding:14px 32px;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s" onclick="navigateToView('tariffs')">Тарифы</button>
       </div>
     </div>
   </section>
@@ -212,18 +212,18 @@
       </div>
       <div>
         <div class="f-col-ttl">Каталог</div>
-        <span class="f-lnk" onclick="go('catalogue');fcat('wine')">Вино</span>
-        <span class="f-lnk" onclick="go('catalogue');fcat('beer')">Пиво</span>
-        <span class="f-lnk" onclick="go('catalogue');fcat('soda')">Газировки</span>
-        <span class="f-lnk" onclick="go('catalogue');fcat('water')">Вода</span>
+        <span class="f-lnk" onclick="navigateToView('catalogue');filterByCategory('wine')">Вино</span>
+        <span class="f-lnk" onclick="navigateToView('catalogue');filterByCategory('beer')">Пиво</span>
+        <span class="f-lnk" onclick="navigateToView('catalogue');filterByCategory('soda')">Газировки</span>
+        <span class="f-lnk" onclick="navigateToView('catalogue');filterByCategory('water')">Вода</span>
       </div>
       <div>
         <div class="f-col-ttl">Компания</div>
-        <span class="f-lnk" onclick="go('about')">О компании</span>
-        <span class="f-lnk" onclick="go('services')">Складские услуги</span>
-        <span class="f-lnk" onclick="go('tariffs')">Тарифы</span>
-        <span class="f-lnk" onclick="go('contacts')">Контакты</span>
-        <span class="f-lnk" onclick="go('contacts')">Политика персданных</span>
+        <span class="f-lnk" onclick="navigateToView('about')">О компании</span>
+        <span class="f-lnk" onclick="navigateToView('services')">Складские услуги</span>
+        <span class="f-lnk" onclick="navigateToView('tariffs')">Тарифы</span>
+        <span class="f-lnk" onclick="navigateToView('contacts')">Контакты</span>
+        <span class="f-lnk" onclick="navigateToView('contacts')">Политика персданных</span>
       </div>
       <div>
         <div class="f-col-ttl">Контакты</div>
@@ -250,8 +250,8 @@
         <h1 style="font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:.5px;line-height:1">Напитки оптом</h1>
       </div>
       <div class="search-row">
-        <input class="s-input" placeholder="🔍  Поиск по названию или бренду..." id="si" oninput="rp()">
-        <select class="s-select" onchange="srt(this.value)">
+        <input class="s-input" placeholder="🔍  Поиск по названию или бренду..." id="si" oninput="renderProducts()">
+        <select class="s-select" onchange="setSortMode(this.value)">
           <option value="">По умолчанию</option>
           <option value="pa">Цена ↑</option>
           <option value="pd">Цена ↓</option>
@@ -260,11 +260,11 @@
       </div>
     </div>
     <div class="filter-strip" id="ftabs">
-      <button class="ftab on" onclick="fcat('all')">Все товары</button>
-      <button class="ftab ftab-wine" onclick="fcat('wine')">🍷 Вино</button>
-      <button class="ftab ftab-beer" onclick="fcat('beer')">🍺 Пиво</button>
-      <button class="ftab ftab-soda" onclick="fcat('soda')">🥤 Газировки</button>
-      <button class="ftab ftab-water" onclick="fcat('water')">💧 Вода</button>
+      <button class="ftab on" onclick="filterByCategory('all')">Все товары</button>
+      <button class="ftab ftab-wine" onclick="filterByCategory('wine')">🍷 Вино</button>
+      <button class="ftab ftab-beer" onclick="filterByCategory('beer')">🍺 Пиво</button>
+      <button class="ftab ftab-soda" onclick="filterByCategory('soda')">🥤 Газировки</button>
+      <button class="ftab ftab-water" onclick="filterByCategory('water')">💧 Вода</button>
     </div>
     <div class="pgrid" id="pgrid"></div>
   </div>
@@ -301,20 +301,20 @@
       <div class="sec-head"><div class="sec-label">Расчёт стоимости</div><h2 class="sec-title">Калькулятор хранения</h2></div>
       <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:36px;max-width:560px">
         <div class="fg"><label class="flbl">Тип паллета</label>
-          <select class="finp" id="pal-type" onchange="calcStorage()">
+          <select class="finp" id="pal-type" onchange="calculateStoragePrice()">
             <option value="32">Европаллет (32 ₽/сутки)</option>
             <option value="36">Финский/Американский паллет (36 ₽/сутки)</option>
           </select>
         </div>
         <div class="frow">
-          <div class="fg"><label class="flbl">Количество паллет</label><input class="finp" type="number" id="pal-cnt" value="10" min="1" oninput="calcStorage()"></div>
-          <div class="fg"><label class="flbl">Количество дней</label><input class="finp" type="number" id="pal-days" value="30" min="1" oninput="calcStorage()"></div>
+          <div class="fg"><label class="flbl">Количество паллет</label><input class="finp" type="number" id="pal-cnt" value="10" min="1" oninput="calculateStoragePrice()"></div>
+          <div class="fg"><label class="flbl">Количество дней</label><input class="finp" type="number" id="pal-days" value="30" min="1" oninput="calculateStoragePrice()"></div>
         </div>
         <div style="background:var(--green-light);border:1px solid rgba(26,92,56,.2);border-radius:12px;padding:20px;display:flex;justify-content:space-between;align-items:center">
           <div><div style="font-size:12px;color:var(--ink3);font-weight:600;letter-spacing:.5px;text-transform:uppercase">Стоимость хранения</div><div style="font-size:11px;color:var(--ink3);margin-top:2px">без НДС</div></div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--green);letter-spacing:.5px" id="calc-result">9 600 ₽</div>
         </div>
-        <button class="btn-solid" style="width:100%;padding:13px;font-size:15px;margin-top:16px;border-radius:12px" onclick="go('contacts')">Заказать точный расчёт</button>
+        <button class="btn-solid" style="width:100%;padding:13px;font-size:15px;margin-top:16px;border-radius:12px" onclick="navigateToView('contacts')">Заказать точный расчёт</button>
       </div>
     </section>
   </div>
@@ -341,7 +341,7 @@
             <li class="tar-li">Минимум 8 часов работы</li>
             <li class="tar-li">Идеально для малого бизнеса</li>
           </ul>
-          <button class="btn-solid" style="width:100%;padding:12px;font-size:14px;border-radius:10px;margin-top:24px" onclick="go('contacts')">Заказать перевозку</button>
+          <button class="btn-solid" style="width:100%;padding:12px;font-size:14px;border-radius:10px;margin-top:24px" onclick="navigateToView('contacts')">Заказать перевозку</button>
         </div>
         <div class="tar">
           <div class="tar-type">Крупнотоннажный транспорт</div>
@@ -356,7 +356,7 @@
             <li class="tar-li">Минимум 8 часов работы</li>
             <li class="tar-li">Для крупных партий</li>
           </ul>
-          <button class="btn-ghost" style="width:100%;padding:12px;font-size:14px;border-radius:10px;margin-top:24px" onclick="go('contacts')">Заказать перевозку</button>
+          <button class="btn-ghost" style="width:100%;padding:12px;font-size:14px;border-radius:10px;margin-top:24px" onclick="navigateToView('contacts')">Заказать перевозку</button>
         </div>
       </div>
       <div style="background:var(--gold-light);border:1px solid rgba(200,146,10,.25);border-radius:16px;padding:24px 28px;margin-top:24px;display:flex;align-items:center;gap:16px">
@@ -431,7 +431,7 @@
           <div class="fg"><label class="flbl">Телефон</label><input class="finp" id="c-phone" placeholder="+7 (___) ___-__-__"></div>
           <div class="fg"><label class="flbl">Комментарий</label><textarea class="finp" id="c-msg" rows="3" placeholder="Ваш вопрос или пожелание..." style="resize:vertical"></textarea></div>
           <p style="font-size:11px;color:var(--ink3);margin-bottom:14px">Нажимая кнопку «Отправить», вы соглашаетесь на обработку персональных данных.</p>
-          <button class="btn-solid" style="width:100%;padding:13px;font-size:15px;border-radius:12px" onclick="sendForm()">Отправить</button>
+          <button class="btn-solid" style="width:100%;padding:13px;font-size:15px;border-radius:12px" onclick="handleContactFormSubmit()">Отправить</button>
         </div>
       </div>
     </section>
@@ -459,11 +459,11 @@
           <div class="scard-num">1</div>
           <div class="scard-title">Адрес самовывоза</div>
           <div class="addr-list">
-            <div class="aopt on" onclick="pickAddr(0)"><div class="aopt-radio"><div class="aopt-dot"></div></div><div><div class="aopt-name">Главный склад — Домодедово</div><div class="aopt-street">территория Триколор, 11</div><div class="aopt-note">+7 (495) 229-40-05 · Пн–Пт 8:00–18:00</div></div></div>
-            <div class="aopt" onclick="pickAddr(1)"><div class="aopt-radio"><div class="aopt-dot"></div></div><div><div class="aopt-name">Склад — Тула (Щегловская Засека)</div><div class="aopt-street">ул. Щегловская Засека, д. 31А</div><div class="aopt-note">+7 (4872) 25-14-07</div></div></div>
-            <div class="aopt" onclick="pickAddr(2)"><div class="aopt-radio"><div class="aopt-dot"></div></div><div><div class="aopt-name">Склад — Тула (Луначарского)</div><div class="aopt-street">ул. Луначарского, дом 76</div><div class="aopt-note">+7 (4872) 25-14-07</div></div></div>
-            <div class="aopt" onclick="pickAddr(3)"><div class="aopt-radio"><div class="aopt-dot"></div></div><div><div class="aopt-name">Склад — Рязань</div><div class="aopt-street">ул. Ряжское шоссе, д. 20</div></div></div>
-            <div class="aopt" onclick="pickAddr(4)"><div class="aopt-radio"><div class="aopt-dot"></div></div><div><div class="aopt-name">Склад — Истра</div><div class="aopt-street">д. Покровское, Центральная ул., 27 стр.2</div></div></div>
+            <div class="aopt on" onclick="selectAddress(0)"><div class="aopt-radio"><div class="aopt-dot"></div></div><div><div class="aopt-name">Главный склад — Домодедово</div><div class="aopt-street">территория Триколор, 11</div><div class="aopt-note">+7 (495) 229-40-05 · Пн–Пт 8:00–18:00</div></div></div>
+            <div class="aopt" onclick="selectAddress(1)"><div class="aopt-radio"><div class="aopt-dot"></div></div><div><div class="aopt-name">Склад — Тула (Щегловская Засека)</div><div class="aopt-street">ул. Щегловская Засека, д. 31А</div><div class="aopt-note">+7 (4872) 25-14-07</div></div></div>
+            <div class="aopt" onclick="selectAddress(2)"><div class="aopt-radio"><div class="aopt-dot"></div></div><div><div class="aopt-name">Склад — Тула (Луначарского)</div><div class="aopt-street">ул. Луначарского, дом 76</div><div class="aopt-note">+7 (4872) 25-14-07</div></div></div>
+            <div class="aopt" onclick="selectAddress(3)"><div class="aopt-radio"><div class="aopt-dot"></div></div><div><div class="aopt-name">Склад — Рязань</div><div class="aopt-street">ул. Ряжское шоссе, д. 20</div></div></div>
+            <div class="aopt" onclick="selectAddress(4)"><div class="aopt-radio"><div class="aopt-dot"></div></div><div><div class="aopt-name">Склад — Истра</div><div class="aopt-street">д. Покровское, Центральная ул., 27 стр.2</div></div></div>
           </div>
         </div>
         <div class="scard">
@@ -472,15 +472,15 @@
           <div class="fg"><label class="flbl">Дата</label><input type="date" class="finp" id="co-date" style="max-width:220px"></div>
           <label class="flbl" style="display:block;margin-bottom:10px">Доступные временны́е слоты</label>
           <div class="time-grid">
-            <div class="tslot on" onclick="pickTime(this)">08:00–09:00</div>
-            <div class="tslot" onclick="pickTime(this)">09:00–10:00</div>
+            <div class="tslot on" onclick="selectTimeSlot(this)">08:00–09:00</div>
+            <div class="tslot" onclick="selectTimeSlot(this)">09:00–10:00</div>
             <div class="tslot busy">10:00–11:00</div>
-            <div class="tslot" onclick="pickTime(this)">11:00–12:00</div>
-            <div class="tslot" onclick="pickTime(this)">12:00–13:00</div>
+            <div class="tslot" onclick="selectTimeSlot(this)">11:00–12:00</div>
+            <div class="tslot" onclick="selectTimeSlot(this)">12:00–13:00</div>
             <div class="tslot busy">13:00–14:00</div>
-            <div class="tslot" onclick="pickTime(this)">14:00–15:00</div>
-            <div class="tslot" onclick="pickTime(this)">15:00–16:00</div>
-            <div class="tslot" onclick="pickTime(this)">16:00–17:00</div>
+            <div class="tslot" onclick="selectTimeSlot(this)">14:00–15:00</div>
+            <div class="tslot" onclick="selectTimeSlot(this)">15:00–16:00</div>
+            <div class="tslot" onclick="selectTimeSlot(this)">16:00–17:00</div>
           </div>
         </div>
         <div class="scard">
@@ -497,7 +497,7 @@
           <div id="co-items"></div>
           <div id="co-rows"></div>
           <button class="btn-full btn-full-main" onclick="placeOrder()">Оформить заказ</button>
-          <button class="btn-full btn-full-out" style="margin-top:8px" onclick="go('cart')">← Изменить корзину</button>
+          <button class="btn-full btn-full-out" style="margin-top:8px" onclick="navigateToView('cart')">← Изменить корзину</button>
         </div>
       </div>
     </div>
@@ -509,7 +509,7 @@
   <div class="ord-page">
     <div style="padding:36px 48px 0;display:flex;align-items:center;justify-content:space-between">
       <h1 style="font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:.5px">Мои заказы</h1>
-      <button class="btn-solid" style="padding:11px 24px;font-size:14px" onclick="go('catalogue')">+ Новый заказ</button>
+      <button class="btn-solid" style="padding:11px 24px;font-size:14px" onclick="navigateToView('catalogue')">+ Новый заказ</button>
     </div>
     <div class="ord-wrap" id="ord-wrap"></div>
   </div>
@@ -522,8 +522,8 @@
       <div class="auth-logo">ООО ЛиСТ</div>
       <div class="auth-sub2">Напитки оптом · Складское предприятие</div>
       <div class="auth-tabs" id="auth-main-tabs">
-        <div class="a-tab on" onclick="atab('l')">Войти</div>
-        <div class="a-tab" onclick="atab('r')">Регистрация</div>
+        <div class="a-tab on" onclick="switchAuthTab('l')">Войти</div>
+        <div class="a-tab" onclick="switchAuthTab('r')">Регистрация</div>
       </div>
       <div id="a-login">
         <div class="a-title">С возвращением!</div>
@@ -536,9 +536,9 @@
         <div class="fg" id="l-phone-wrap" style="display:none"><label class="flbl">Телефон</label><input class="finp" id="l-phone" placeholder="+7 (___) ___-__-__"></div>
         <div class="fg"><label class="flbl">Пароль</label><input class="finp" type="password" id="l-pass" placeholder="••••••••"></div>
         <div style="text-align:right;margin-bottom:16px"><span class="a-link" style="font-size:13px">Забыли пароль?</span></div>
-        <button class="btn-solid" style="width:100%;padding:13px;font-size:15px;border-radius:12px" onclick="doLogin()">Войти</button>
+        <button class="btn-solid" style="width:100%;padding:13px;font-size:15px;border-radius:12px" onclick="handleLogin()">Войти</button>
         <div class="a-divider"><div class="a-div-line"></div><div class="a-div-txt">или</div><div class="a-div-line"></div></div>
-        <div style="text-align:center;font-size:14px;color:var(--ink3)">Нет аккаунта? <span class="a-link" onclick="atab('r')">Зарегистрироваться</span></div>
+        <div style="text-align:center;font-size:14px;color:var(--ink3)">Нет аккаунта? <span class="a-link" onclick="switchAuthTab('r')">Зарегистрироваться</span></div>
       </div>
       <div id="a-reg" style="display:none">
         <div class="a-title">Создать аккаунт</div>
@@ -548,8 +548,8 @@
         <div class="fg"><label class="flbl">Телефон</label><input class="finp" id="r-ph" placeholder="+7 (___) ___-__-__"></div>
         <div class="fg"><label class="flbl">Пароль</label><input class="finp" type="password" id="r-pass" placeholder="Минимум 8 символов"></div>
         <div class="fg"><label class="flbl">Подтверждение пароля</label><input class="finp" type="password" id="r-pass2" placeholder="••••••••"></div>
-        <button class="btn-solid" style="width:100%;padding:13px;font-size:15px;border-radius:12px" onclick="doReg()">Зарегистрироваться</button>
-        <div style="text-align:center;font-size:14px;color:var(--ink3);margin-top:16px">Уже есть аккаунт? <span class="a-link" onclick="atab('l')">Войти</span></div>
+        <button class="btn-solid" style="width:100%;padding:13px;font-size:15px;border-radius:12px" onclick="handleRegister()">Зарегистрироваться</button>
+        <div style="text-align:center;font-size:14px;color:var(--ink3);margin-top:16px">Уже есть аккаунт? <span class="a-link" onclick="switchAuthTab('l')">Войти</span></div>
       </div>
     </div>
   </div>
@@ -564,9 +564,9 @@
         <div class="p-name" id="p-nm">Иван Иванов</div>
         <div class="p-phone" id="p-ph">+7 (495) 000-00-00</div>
         <div class="smenu">
-          <div class="sitem on" onclick="psec('data')">👤 Личные данные</div>
-          <div class="sitem" onclick="psec('orders')">📦 Мои заказы</div>
-          <div class="sitem" onclick="psec('security')">🔒 Безопасность</div>
+          <div class="sitem on" onclick="switchProfileSection('data')">👤 Личные данные</div>
+          <div class="sitem" onclick="switchProfileSection('orders')">📦 Мои заказы</div>
+          <div class="sitem" onclick="switchProfileSection('security')">🔒 Безопасность</div>
         </div>
       </div>
       <div id="p-main"></div>
@@ -575,7 +575,7 @@
 </div>
 
 <!-- MODAL -->
-<div class="moverlay" id="pmodal" onclick="cmodal(event)">
+<div class="moverlay" id="pmodal" onclick="closeProductModal(event)">
   <div class="modal"><button class="mcls" onclick="document.getElementById('pmodal').classList.remove('open')" aria-label="Закрыть">✕</button><div id="mcontent"></div></div>
 </div>
 

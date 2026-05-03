@@ -49,6 +49,6 @@ INSERT INTO products (id, category_id, name, brand, description, price, unit_nam
 -- 3. НАПОЛНЕНИЕ ПОЛЬЗОВАТЕЛЕЙ
 -- ==========================================
 -- Хэш пароля 'password123' (пример bcrypt хэша)
-INSERT INTO users (id, first_name, last_name, phone, password_hash, role, is_active) VALUES
-('55555555-5555-5555-5555-555555555555', N'Админ', N'Админов', '+7 (999) 000-00-00', '$2a$12$N9/mXgB9aB2YI.T1OQZ8y.38l6Z5G4vG3zU0a9C4A0jQ.oZtXhY0m', 'admin', 1),
-('66666666-6666-6666-6666-666666666666', N'Иван', N'Иванов', '+7 (495) 000-00-00', '$2a$12$N9/mXgB9aB2YI.T1OQZ8y.38l6Z5G4vG3zU0a9C4A0jQ.oZtXhY0m', 'user', 1);
+INSERT INTO users (id, first_name, last_name, phone, email, password_hash, role, is_active) VALUES
+('55555555-5555-5555-5555-555555555555', N'Админ', N'Админов', '79990000000', 'admin@diplom.ru', '$2b$10$bPgekur0qnqZNGKcqXe7ReFLcsdi3A1nAeDpDjo4y1jmPs8gjoQ2.', 'admin', 1),
+('66666666-6666-6666-6666-666666666666', N'Иван', N'Иванов', '74950000000', 'ivan@diplom.ru', '$2b$10$bPgekur0qnqZNGKcqXe7ReFLcsdi3A1nAeDpDjo4y1jmPs8gjoQ2.', 'user', 1);

@@ -36,7 +36,8 @@ CREATE TABLE users (
     id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
     first_name NVARCHAR(100) NOT NULL,
     last_name NVARCHAR(100),
-    phone NVARCHAR(20) NOT NULL UNIQUE,
+    phone NVARCHAR(20) UNIQUE,
+    email NVARCHAR(255) UNIQUE,
     password_hash NVARCHAR(255) NOT NULL,
     role NVARCHAR(20) NOT NULL DEFAULT 'user',
     is_active BIT DEFAULT 1,
@@ -47,4 +48,11 @@ CREATE TABLE users (
 );
 
 CREATE INDEX IX_Users_Phone ON users(phone);
+
+-- Таблица сессий для connect-mssql-v2
+CREATE TABLE [sessions] (
+    [sid] VARCHAR(255) NOT NULL PRIMARY KEY,
+    [session] VARCHAR(MAX) NOT NULL,
+    [expires] DATETIME NOT NULL
+);
 

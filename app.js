@@ -42,15 +42,13 @@ let hasDemoOrders=false;
 function saveState(){
   localStorage.setItem(STORAGE_KEYS.cart, JSON.stringify(cart));
   localStorage.setItem(STORAGE_KEYS.orders, JSON.stringify(orders));
-  localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
 }
 function loadState(){
   try{
     cart=JSON.parse(localStorage.getItem(STORAGE_KEYS.cart) || '{}') || {};
     orders=JSON.parse(localStorage.getItem(STORAGE_KEYS.orders) || '[]') || [];
-    user=JSON.parse(localStorage.getItem(STORAGE_KEYS.user) || 'null');
   }catch(_e){
-    cart={}; orders=[]; user=null;
+    cart={}; orders=[];
   }
 }
 
@@ -229,30 +227,64 @@ function loginMethodTab(method){
   document.getElementById('l-email-wrap').style.display=method==='email'?'block':'none';
   document.getElementById('l-phone-wrap').style.display=method==='phone'?'block':'none';
 }
-function doLogin(){
+async function doLogin(){
   const em=document.getElementById('l-email').value.trim();
   const ph=document.getElementById('l-phone').value.trim();
   const p=document.getElementById('l-pass').value;
   const loginValue=loginMethod==='email'?em:ph;
   if(!loginValue||!p){toast('⚠️','Заполните все поля');return;}
-  user={name:'Иван',lastname:'Иванов',phone:ph,email:em};
-  saveState();
-  updAuthUI();toast('👋','Добро пожаловать!');go('catalogue');
+  
+  try {
+    const res = await fetch('http://localhost:3000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ login: loginValue, password: p })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Ошибка входа');
+    
+    await checkAuth();
+    toast('👋','Добро пожаловать!');go('catalogue');
+  } catch (err) {
+    toast('⚠️', err.message);
+  }
 }
-function doReg(){
+async function doReg(){
   const nm=document.getElementById('r-nm').value.trim(), ln=document.getElementById('r-ln').value.trim();
   const em=document.getElementById('r-email').value.trim();
   const ph=document.getElementById('r-ph').value.trim();
   const p=document.getElementById('r-pass').value, p2=document.getElementById('r-pass2').value;
-  if(!nm||!em||!ph||!p){toast('⚠️','Заполните обязательные поля');return;}
-  if(!/^\S+@\S+\.\S+$/.test(em)){toast('⚠️','Укажите корректную почту');return;}
+  if(!nm||(!em&&!ph)||!p){toast('⚠️','Заполните обязательные поля');return;}
+  if(em && !/^\S+@\S+\.\S+$/.test(em)){toast('⚠️','Укажите корректную почту');return;}
   if(p.length<8){toast('⚠️','Пароль — минимум 8 символов');return;}
   if(p!==p2){toast('⚠️','Пароли не совпадают');return;}
-  user={name:nm,lastname:ln,phone:ph,email:em};
-  saveState();
-  updAuthUI();toast('🎉','Регистрация успешна!');go('catalogue');
+  
+  try {
+    const res = await fetch('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ firstName: nm, lastName: ln, email: em || null, phone: ph || null, password: p })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Ошибка регистрации');
+    
+    await checkAuth();
+    toast('🎉','Регистрация успешна!');go('catalogue');
+  } catch (err) {
+    toast('⚠️', err.message);
+  }
 }
-function doLogout(){user=null;saveState();updAuthUI();go('home');toast('👋','Вы вышли из аккаунта');}
+async function doLogout(){
+  try {
+    await fetch('http://localhost:3000/api/auth/logout', { method: 'POST', credentials: 'include' });
+  } catch(e){}
+  user=null;
+  updAuthUI();
+  go('home');
+  toast('👋','Вы вышли из аккаунта');
+}
 function updAuthUI(){
   document.getElementById('nauth').style.display=user?'none':'block';
   document.getElementById('nlogout').style.display=user?'block':'none';
@@ -306,6 +338,26 @@ function toast(ic,msg){
 
 
 // ═══ API ═══
+async function checkAuth() {
+  try {
+    const res = await fetch('http://localhost:3000/api/auth/me', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      user = {
+        name: data.user.first_name,
+        lastname: data.user.last_name,
+        phone: data.user.phone,
+        email: data.user.email
+      };
+    } else {
+      user = null;
+    }
+  } catch (err) {
+    user = null;
+  }
+  updAuthUI();
+}
+
 async function fetchCategories() {
   try {
     const res = await fetch('http://localhost:3000/categories');
@@ -334,7 +386,7 @@ async function fetchProductsByCategory(categoryId) {
 }
 
 // ═══ INIT ═══
-(function(){
+(async function(){
   loadState();
   hasDemoOrders=orders.length>0;
   window.addEventListener('popstate',()=>goPath(window.location.pathname));
@@ -347,7 +399,9 @@ async function fetchProductsByCategory(categoryId) {
     saveState();
   }
   updBadge();
-  updAuthUI();
+  
+  await checkAuth();
+  
   goPath(window.location.pathname);
 
   // Вызовы бэкенд ручек

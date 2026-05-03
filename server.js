@@ -4,6 +4,7 @@ const cors = require('cors');
 const session = require('express-session');
 const MSSQLStore = require('connect-mssql-v2');
 const bcrypt = require('bcryptjs');
+const path = require('path');
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
@@ -235,6 +236,18 @@ app.get('/products', async (req, res) => {
       message: error.message,
     });
   }
+});
+
+// Отдаем статику (js, css)
+app.get('/app.js', (req, res) => res.sendFile(path.join(__dirname, 'app.js')));
+app.get('/styles.css', (req, res) => res.sendFile(path.join(__dirname, 'styles.css')));
+
+// SPA Fallback: все остальные GET-запросы возвращают index.html
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ error: 'Endpoint not found' });
+  }
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, () => {

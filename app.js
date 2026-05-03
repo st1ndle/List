@@ -21,6 +21,10 @@ const ADDRS = ['Домодедово, тер. Триколор, 11', 'Тула, 
 const CATNAMES = { wine: 'Вино', beer: 'Пиво', soda: 'Газировки', water: 'Вода' };
 
 let cart = {}, curCat = 'all', srtMode = '', orders = [], user = null, selAddr = 0, cats = [];
+let allProducts = [];
+let visibleCount = 0;
+let lazyObserver = null;
+const PRODUCTS_BATCH_SIZE = 8;
 const PATH_TO_VIEW = {
   '/': 'home',
   '/catalog': 'catalogue',
@@ -96,7 +100,7 @@ function switchView(viewName, shouldPushState) {
 
   // Вызов функций рендеринга для специфичных экранов
   const renderFunctions = {
-    catalogue: renderProducts,
+    catalogue: () => renderProducts(true),
     cart: renderCart,
     checkout: renderCheckout,
     orders: renderOrders,
@@ -111,9 +115,11 @@ function switchView(viewName, shouldPushState) {
       (async () => {
         if (!cats.length) {
           await fetchCategories();
+          if (curCat === 'all' && cats.length) curCat = cats[0].slug;
           renderCategoryTabs();
         }
-        renderProducts();
+        await loadProductsForCurrentCategory();
+        renderProducts(true);
       })();
     } else {
       renderFunctions[target]();
@@ -135,12 +141,13 @@ function switchView(viewName, shouldPushState) {
  * Устанавливает фильтр по категории
  * @param {string} categorySlug - Слаг категории (например, 'wine' или 'all')
  */
-function filterByCategory(categorySlug) {
+async function filterByCategory(categorySlug) {
   curCat = categorySlug;
   document.querySelectorAll('.ftab').forEach(t => t.classList.remove('on'));
   const btn = document.querySelector(`.ftab[data-cat="${categorySlug}"]`);
   if (btn) btn.classList.add('on');
-  renderProducts();
+  await loadProductsForCurrentCategory();
+  renderProducts(true);
 }
 
 /**
@@ -149,7 +156,7 @@ function filterByCategory(categorySlug) {
  */
 function setSortMode(mode) {
   srtMode = mode;
-  renderProducts();
+  renderProducts(true);
 }
 
 /**
@@ -157,7 +164,7 @@ function setSortMode(mode) {
  * @returns {Array} Отфильтрованный и отсортированный массив продуктов
  */
 function getFilteredProducts() {
-  let list = PRODS.filter(p => curCat === 'all' || p.cat === curCat);
+  let list = allProducts.filter(p => curCat === 'all' || p.cat === curCat);
   const query = (document.getElementById('si') || { value: '' }).value.toLowerCase();
 
   if (query) {
@@ -174,20 +181,23 @@ function getFilteredProducts() {
 /**
  * Отрисовывает сетку продуктов в каталоге
  */
-function renderProducts() {
+function renderProducts(resetLazy = false) {
   const grid = document.getElementById('pgrid');
   if (!grid) return;
 
   const list = getFilteredProducts();
+  if (resetLazy || !visibleCount) visibleCount = PRODUCTS_BATCH_SIZE;
 
   if (!list.length) {
     grid.innerHTML = '<div class="no-res"><div class="no-res-icon">🔍</div><div style="font-size:16px;font-weight:500">Ничего не найдено</div></div>';
+    if (lazyObserver) lazyObserver.disconnect();
     return;
   }
 
-  grid.innerHTML = list.map(p => {
+  const visibleProducts = list.slice(0, visibleCount);
+  grid.innerHTML = visibleProducts.map(p => {
     const inCart = cart[p.id] || 0;
-    return `<div class="pc ani" onclick="openProductModal(${p.id})">
+    return `<div class="pc ani" onclick='openProductModal(${JSON.stringify(p.id)})'>
       <div class="pc-img" style="background:${p.color}">
         ${p.badge ? `<span class="pc-badge" style="background:${p.catColor};color:#fff">${p.badge}</span>` : ''}
         ${p.emoji}
@@ -199,12 +209,25 @@ function renderProducts() {
         <div class="pc-desc">${p.desc.slice(0, 75)}…</div>
         <div class="pc-foot">
           <div><div class="pc-price" style="color:var(--green)">${p.price}₽</div><div class="pc-unit">${p.unit}</div></div>
-          ${inCart ? `<div class="qty-wrap" onclick="event.stopPropagation()"><button class="qb" onclick="updateCartQuantity(${p.id},-1)">−</button><span class="qn">${inCart}</span><button class="qb" onclick="updateCartQuantity(${p.id},1)">+</button></div>`
-        : `<button class="btn-add" onclick="event.stopPropagation();addToCart(${p.id})">В корзину</button>`}
+          ${inCart ? `<div class="qty-wrap" onclick="event.stopPropagation()"><button class="qb" onclick='updateCartQuantity(${JSON.stringify(p.id)},-1)'>−</button><span class="qn">${inCart}</span><button class="qb" onclick='updateCartQuantity(${JSON.stringify(p.id)},1)'>+</button></div>`
+        : `<button class="btn-add" onclick='event.stopPropagation();addToCart(${JSON.stringify(p.id)})'>В корзину</button>`}
         </div>
       </div>
     </div>`;
-  }).join('');
+  }).join('') + '<div id="products-lazy-sentinel" style="height:1px"></div>';
+
+  const sentinel = document.getElementById('products-lazy-sentinel');
+  if (lazyObserver) lazyObserver.disconnect();
+  lazyObserver = new IntersectionObserver(entries => {
+    if (!entries[0].isIntersecting) return;
+    if (visibleCount >= list.length) {
+      lazyObserver.disconnect();
+      return;
+    }
+    visibleCount += PRODUCTS_BATCH_SIZE;
+    renderProducts(false);
+  }, { rootMargin: '300px 0px' });
+  if (sentinel) lazyObserver.observe(sentinel);
 }
 
 // ═══ MODAL ═══
@@ -214,7 +237,8 @@ function renderProducts() {
  * @param {number} id - ID продукта
  */
 function openProductModal(id) {
-  const p = PRODS.find(x => x.id === id);
+  const p = allProducts.find(x => x.id === id);
+  if (!p) return;
   const inCart = cart[p.id] || 0;
 
   document.getElementById('mcontent').innerHTML = `
@@ -227,11 +251,42 @@ function openProductModal(id) {
       <div class="m-desc">${p.desc}</div>
       <div class="m-attrs">${Object.entries(p.attrs).map(([k, v]) => `<div class="m-attr"><div class="m-albl">${k}</div><div class="m-aval">${v}</div></div>`).join('')}</div>
       <div class="m-foot">
-        ${inCart ? `<div class="qty-wrap"><button class="qb" onclick="updateCartQuantity(${p.id},-1);openProductModal(${p.id})">−</button><span class="qn">${inCart}</span><button class="qb" onclick="updateCartQuantity(${p.id},1);openProductModal(${p.id})">+</button></div><span style="font-size:13px;color:var(--ink3)">В корзине: ${inCart} шт.</span>`
-      : `<button class="btn-solid" style="flex:1;padding:13px;font-size:15px;border-radius:12px" onclick="addToCart(${p.id});openProductModal(${p.id})">Добавить в корзину</button>`}
+        ${inCart ? `<div class="qty-wrap"><button class="qb" onclick='updateCartQuantity(${JSON.stringify(p.id)},-1);openProductModal(${JSON.stringify(p.id)})'>−</button><span class="qn">${inCart}</span><button class="qb" onclick='updateCartQuantity(${JSON.stringify(p.id)},1);openProductModal(${JSON.stringify(p.id)})'>+</button></div><span style="font-size:13px;color:var(--ink3)">В корзине: ${inCart} шт.</span>`
+      : `<button class="btn-solid" style="flex:1;padding:13px;font-size:15px;border-radius:12px" onclick='addToCart(${JSON.stringify(p.id)});openProductModal(${JSON.stringify(p.id)})'>Добавить в корзину</button>`}
       </div>
     </div>`;
   document.getElementById('pmodal').classList.add('open');
+}
+
+function normalizeProductAttrs(rawAttrs, fallbackCategoryName) {
+  if (!rawAttrs) return { Категория: fallbackCategoryName || 'Товар' };
+
+  if (typeof rawAttrs === 'string') {
+    try {
+      const parsed = JSON.parse(rawAttrs);
+      return normalizeProductAttrs(parsed, fallbackCategoryName);
+    } catch (_e) {
+      return { Описание: rawAttrs };
+    }
+  }
+
+  if (Array.isArray(rawAttrs)) {
+    const fromArray = {};
+    rawAttrs.forEach((item, idx) => {
+      if (item && typeof item === 'object') {
+        const key = item.key || item.name || item.label || `Параметр ${idx + 1}`;
+        const value = item.value ?? item.val ?? item.text ?? '';
+        fromArray[key] = String(value);
+      }
+    });
+    return Object.keys(fromArray).length ? fromArray : { Категория: fallbackCategoryName || 'Товар' };
+  }
+
+  if (typeof rawAttrs === 'object') {
+    return Object.fromEntries(Object.entries(rawAttrs).map(([k, v]) => [k, String(v)]));
+  }
+
+  return { Категория: fallbackCategoryName || 'Товар' };
 }
 
 /**
@@ -255,7 +310,8 @@ function addToCart(id) {
   updateCartBadge();
   saveToLocalStorage();
   showToast('✓', 'Добавлено в корзину');
-  renderProducts();
+  allProducts = PRODS.slice();
+  renderProducts(true);
 }
 
 /**
@@ -268,7 +324,8 @@ function updateCartQuantity(id, delta) {
   if (cart[id] <= 0) delete cart[id];
   updateCartBadge();
   saveToLocalStorage();
-  renderProducts();
+  allProducts = PRODS.slice();
+  renderProducts(true);
   renderCart();
 }
 
@@ -311,7 +368,7 @@ function updateCartBadge() {
  */
 function calculateCartTotal() {
   return Object.entries(cart).reduce((sum, [id, qty]) => {
-    const p = PRODS.find(p => p.id == id);
+    const p = allProducts.find(p => p.id == id);
     return sum + (p ? p.price * qty : 0);
   }, 0);
 }
@@ -333,7 +390,7 @@ function renderCart() {
   el.innerHTML = `<div class="clayout">
     <div class="cart-list">
       ${items.map(([id, q]) => {
-    const p = PRODS.find(x => x.id == id);
+    const p = allProducts.find(x => x.id == id);
     return `<div class="ci"><div class="ci-emoji">${p.emoji}</div><div class="ci-info"><div class="ci-name">${p.name}</div><div class="ci-meta">${p.brand} · ${p.unit} · ${p.price}₽/шт.</div></div><div class="qty-wrap"><button class="qb" onclick="updateCartQuantity(${id},-1)">−</button><span class="qn">${q}</span><button class="qb" onclick="updateCartQuantity(${id},1)">+</button></div><div class="ci-price">${p.price * q}₽</div><button class="ci-del" onclick="removeFromCart(${id})" aria-label="Удалить">✕</button></div>`;
   }).join('')}
     </div>
@@ -379,7 +436,7 @@ function renderCheckout() {
   if (!ci) return;
 
   ci.innerHTML = items.map(([id, q]) => {
-    const p = PRODS.find(x => x.id == id);
+    const p = allProducts.find(x => x.id == id);
     return `<div class="crow"><span class="crow-lbl">${p.emoji} ${p.name} ×${q}</span><span class="crow-val">${p.price * q}₽</span></div>`;
   }).join('');
 
@@ -403,7 +460,7 @@ function placeOrder() {
     return;
   }
 
-  const items = Object.entries(cart).map(([id, q]) => ({ p: PRODS.find(x => x.id == id), q }));
+  const items = Object.entries(cart).map(([id, q]) => ({ p: allProducts.find(x => x.id == id), q }));
   if (!items.length) {
     showToast('⚠️', 'Корзина пуста');
     return;
@@ -469,7 +526,7 @@ function renderOrders() {
 function repeatOrder(id) {
   const order = orders.find(x => x.id === id);
   order.items.forEach(item => {
-    const product = PRODS.find(x => x.name === item.name);
+    const product = allProducts.find(x => x.name === item.name);
     if (product) cart[product.id] = (cart[product.id] || 0) + item.q;
   });
   updateCartBadge();
@@ -779,14 +836,41 @@ function renderCategoryTabs() {
   if (!container) return;
 
   const icons = { wine: '🍷', beer: '🍺', soda: '🥤', water: '💧' };
-  let html = `<button class="ftab ${curCat === 'all' ? 'on' : ''}" data-cat="all" onclick="filterByCategory('all')">Все товары</button>`;
+  let html = '';
 
   cats.forEach(c => {
     const icon = icons[c.slug] || '📦';
     html += `<button class="ftab ftab-${c.slug} ${curCat === c.slug ? 'on' : ''}" data-cat="${c.slug}" onclick="filterByCategory('${c.slug}')">${icon} ${c.name}</button>`;
   });
+  html += `<button class="ftab ${curCat === 'all' ? 'on' : ''}" data-cat="all" onclick="filterByCategory('all')">Все товары</button>`;
 
   container.innerHTML = html;
+}
+
+async function loadProductsForCurrentCategory() {
+  const selectedCat = cats.find(c => c.slug === curCat);
+  const categoryId = curCat === 'all' ? 'all' : (selectedCat ? selectedCat.id : 'all');
+  const productsFromApi = await fetchProductsByCategory(categoryId);
+
+  if (!Array.isArray(productsFromApi)) return;
+
+  allProducts = productsFromApi.map(p => ({
+    id: p.id,
+    cat: p.category_slug || (selectedCat ? selectedCat.slug : 'other'),
+    name: p.name,
+    brand: p.brand || 'Без бренда',
+    desc: p.description || 'Описание скоро появится.',
+    price: Number(p.price) || 0,
+    unit: p.unit || 'шт.',
+    emoji: p.emoji || '📦',
+    badge: p.badge || null,
+    color: p.color || 'rgba(26,74,107,.07)',
+    catColor: p.cat_color || '#1A4A6B',
+    attrs: normalizeProductAttrs(
+      p.attrs || p.attributes || p.specs,
+      CATNAMES[p.category_slug] || (selectedCat ? selectedCat.name : 'Товар')
+    )
+  }));
 }
 
 /**
@@ -800,9 +884,7 @@ async function fetchProductsByCategory(categoryId) {
       : 'http://localhost:3000/products';
     const res = await fetch(url);
     if (!res.ok) throw new Error('Failed to fetch products');
-    const data = await res.json();
-    console.log(`Fetched products for category ${categoryId || 'all'} from backend:`, data);
-    return data;
+    return await res.json();
   } catch (error) {
     console.error('Error fetching products:', error);
   }
@@ -832,5 +914,10 @@ async function fetchProductsByCategory(categoryId) {
 
   updateCartBadge();
   await checkAuthStatus();
+  await fetchCategories();
+  if (curCat === 'all' && cats.length) curCat = cats[0].slug;
+  renderCategoryTabs();
+  await loadProductsForCurrentCategory();
+  renderProducts(true);
   navigateToPath(window.location.pathname);
 })();

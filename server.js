@@ -174,6 +174,110 @@ app.get('/api/auth/me', async (req, res) => {
   }
 });
 
+app.post('/api/orders', async (req, res) => {
+  if (!req.session.userId) return res.status(401).json({ error: 'Unauthorized' });
+  const { items, total_amount, delivery_address, comment, customer_name, customer_phone } = req.body;
+  if (!items || !items.length) return res.status(400).json({ error: 'Empty cart' });
+
+  try {
+    const p = await getPool();
+    const transaction = new sql.Transaction(p);
+    await transaction.begin();
+
+    try {
+      const userRes = await transaction.request()
+        .input('userId', sql.UniqueIdentifier, req.session.userId)
+        .query('SELECT first_name, last_name, phone FROM users WHERE id = @userId');
+      if (userRes.recordset.length === 0) throw new Error('User not found');
+      const user = userRes.recordset[0];
+      
+      const final_customer_name = customer_name || `${user.first_name} ${user.last_name || ''}`.trim();
+      const final_customer_phone = customer_phone || user.phone || '';
+
+      const orderRes = await transaction.request()
+        .input('userId', sql.UniqueIdentifier, req.session.userId)
+        .input('totalAmount', sql.Decimal(10, 2), total_amount)
+        .input('customerName', sql.NVarChar, final_customer_name)
+        .input('customerPhone', sql.NVarChar, final_customer_phone)
+        .input('deliveryAddress', sql.NVarChar, delivery_address || null)
+        .input('comment', sql.NVarChar, comment || null)
+        .query(`
+          INSERT INTO orders (user_id, status, total_amount, customer_name, customer_phone, delivery_address, comment)
+          OUTPUT INSERTED.id, INSERTED.order_number
+          VALUES (@userId, 'new', @totalAmount, @customerName, @customerPhone, @deliveryAddress, @comment)
+        `);
+
+      const orderId = orderRes.recordset[0].id;
+      const orderNumber = orderRes.recordset[0].order_number;
+
+      for (const item of items) {
+        await transaction.request()
+          .input('orderId', sql.UniqueIdentifier, orderId)
+          .input('productId', sql.VarChar(36), String(item.id))
+          .input('quantity', sql.Int, item.quantity)
+          .input('priceAtPurchase', sql.Decimal(10, 2), item.price_at_purchase)
+          .query(`
+            INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase)
+            VALUES (@orderId, @productId, @quantity, @priceAtPurchase)
+          `);
+      }
+
+      await transaction.commit();
+      res.json({ status: 'ok', order_id: orderId, order_number: orderNumber });
+    } catch (err) {
+      await transaction.rollback();
+      throw err;
+    }
+  } catch (error) {
+    console.error('Order creation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/orders', async (req, res) => {
+  if (!req.session.userId) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const p = await getPool();
+    const ordersRes = await p.request()
+      .input('userId', sql.UniqueIdentifier, req.session.userId)
+      .query('SELECT * FROM orders WHERE user_id = @userId ORDER BY created_at DESC');
+    const userOrders = ordersRes.recordset;
+
+    if (userOrders.length > 0) {
+      const itemsRes = await p.request()
+        .input('userId', sql.UniqueIdentifier, req.session.userId)
+        .query(`
+          SELECT oi.order_id, oi.product_id, oi.quantity, oi.price_at_purchase, p.name, p.emoji
+          FROM order_items oi
+          JOIN orders o ON oi.order_id = o.id
+          LEFT JOIN products p ON oi.product_id = p.id
+          WHERE o.user_id = @userId
+        `);
+      
+      const itemsByOrder = {};
+      itemsRes.recordset.forEach(item => {
+        if (!itemsByOrder[item.order_id]) itemsByOrder[item.order_id] = [];
+        itemsByOrder[item.order_id].push({
+          id: item.product_id,
+          name: item.name || 'Неизвестный товар',
+          emoji: item.emoji || '📦',
+          q: item.quantity,
+          price: item.price_at_purchase
+        });
+      });
+
+      userOrders.forEach(o => {
+        o.items = itemsByOrder[o.id] || [];
+      });
+    }
+
+    res.json(userOrders);
+  } catch (error) {
+    console.error('Fetch orders error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/health', async (req, res) => {
   try {
     const p = await getPool();

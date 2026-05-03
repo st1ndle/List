@@ -1,24 +1,6 @@
 // ═══ DATA ═══
-const PRODS = [
-  { id: 1, cat: 'wine', name: 'Каберне Совиньон', brand: 'Фанагория', desc: 'Выдержанное красное сухое вино с нотами чёрной смородины, ежевики и ванили. Танинное, с долгим послевкусием.', price: 490, unit: 'бут. 0.75л', emoji: '🍷', badge: 'Хит', color: 'rgba(123,45,94,.09)', catColor: '#7B2D5E', attrs: { Крепость: '13.5%', Объём: '0.75 л', Страна: 'Россия', Тип: 'Красное сухое' } },
-  { id: 2, cat: 'wine', name: 'Шардоне', brand: 'Абрау-Дюрсо', desc: 'Элегантное белое вино с ароматом зелёного яблока, персика и цветов. Свежее и гармоничное.', price: 380, unit: 'бут. 0.75л', emoji: '🥂', badge: null, color: 'rgba(200,146,10,.08)', catColor: '#A07010', attrs: { Крепость: '12.5%', Объём: '0.75 л', Страна: 'Россия', Тип: 'Белое сухое' } },
-  { id: 3, cat: 'wine', name: 'Розе Брют', brand: 'Наследие Мастера', desc: 'Игристое розовое вино с ароматом клубники и розы. Мелкие пузырьки, свежий финиш.', price: 620, unit: 'бут. 0.75л', emoji: '🍾', badge: 'Новинка', color: 'rgba(200,80,120,.08)', catColor: '#C05080', attrs: { Крепость: '11.5%', Объём: '0.75 л', Страна: 'Россия', Тип: 'Розовое игристое' } },
-  { id: 4, cat: 'wine', name: 'Совиньон Блан', brand: 'Лефкадия', desc: 'Сухое белое вино с ярким ароматом крыжовника, грейпфрута и свежей травы.', price: 520, unit: 'бут. 0.75л', emoji: '🍷', badge: null, color: 'rgba(42,140,60,.08)', catColor: '#2A8C3C', attrs: { Крепость: '13%', Объём: '0.75 л', Страна: 'Россия', Тип: 'Белое сухое' } },
-  { id: 5, cat: 'beer', name: 'Балтика №3', brand: 'Балтика', desc: 'Классическое светлое пиво с чистым солодовым вкусом и лёгкой хмелевой горчинкой.', price: 95, unit: 'бан. 0.5л', emoji: '🍺', badge: 'Хит', color: 'rgba(200,135,10,.09)', catColor: '#A06008', attrs: { Крепость: '4.8%', Объём: '0.5 л', Страна: 'Россия', Тип: 'Светлое' } },
-  { id: 6, cat: 'beer', name: 'Жигулёвское', brand: 'Жигули', desc: 'Традиционное российское пиво. Лёгкое, освежающее, с характерным солодовым ароматом.', price: 85, unit: 'бан. 0.45л', emoji: '🍻', badge: null, color: 'rgba(180,120,10,.08)', catColor: '#B47800', attrs: { Крепость: '4.5%', Объём: '0.45 л', Страна: 'Россия', Тип: 'Светлое' } },
-  { id: 7, cat: 'beer', name: 'Heineken', brand: 'Heineken', desc: 'Премиальное нидерландское лагер-пиво. Чистый вкус, лёгкая горчинка, освежающий финиш.', price: 140, unit: 'бан. 0.5л', emoji: '🍺', badge: null, color: 'rgba(26,100,40,.08)', catColor: '#1A6428', attrs: { Крепость: '5%', Объём: '0.5 л', Страна: 'Нидерланды', Тип: 'Светлое лагер' } },
-  { id: 8, cat: 'beer', name: 'Крафт ИПА', brand: 'AF Brew', desc: 'Насыщенное крафтовое пиво с обильным хмелением, тропическими и цитрусовыми нотами.', price: 220, unit: 'бот. 0.33л', emoji: '🍺', badge: 'Крафт', color: 'rgba(180,90,20,.08)', catColor: '#B45A14', attrs: { Крепость: '6.5%', Объём: '0.33 л', Страна: 'Россия', Тип: 'Индийский Пэйл Эль' } },
-  { id: 9, cat: 'soda', name: 'Coca-Cola', brand: 'Coca-Cola HBC', desc: 'Культовый газированный напиток с неповторимым вкусом. Поставляется компанией Coca-Cola HBC.', price: 89, unit: 'бут. 1.5л', emoji: '🥤', badge: 'Хит', color: 'rgba(180,30,30,.07)', catColor: '#B41E1E', attrs: { Объём: '1.5 л', Сахар: '10.6г/100мл', Страна: 'Россия', Тип: 'Лимонад' } },
-  { id: 10, cat: 'soda', name: 'Sprite', brand: 'Coca-Cola HBC', desc: 'Освежающий лимонно-лаймовый напиток. Прозрачный, игристый, без кофеина.', price: 79, unit: 'бут. 1.5л', emoji: '🧃', badge: null, color: 'rgba(26,92,56,.07)', catColor: '#1A5C38', attrs: { Объём: '1.5 л', Сахар: '6.6г/100мл', Страна: 'Россия', Тип: 'Лимонад' } },
-  { id: 11, cat: 'soda', name: 'Добрый Яблоко', brand: 'Coca-Cola HBC', desc: 'Натуральный яблочный сок с мякотью. Без консервантов, богатый витаминами.', price: 65, unit: 'пак. 1л', emoji: '🍎', badge: null, color: 'rgba(150,100,20,.07)', catColor: '#966414', attrs: { Объём: '1 л', Сахар: 'естественный', Страна: 'Россия', Тип: 'Сок' } },
-  { id: 12, cat: 'soda', name: 'Red Bull', brand: 'Red Bull GmbH', desc: 'Энергетический напиток с таурином и кофеином. Поддерживает концентрацию и энергию.', price: 130, unit: 'бан. 0.25л', emoji: '⚡', badge: null, color: 'rgba(200,146,10,.08)', catColor: '#C89200', attrs: { Объём: '0.25 л', Кофеин: '80мг', Страна: 'Австрия', Тип: 'Энергетик' } },
-  { id: 13, cat: 'water', name: 'Acqua Panna', brand: 'Acqua Panna', desc: 'Натуральная минеральная вода без газа из Тосканы. Мягкая, сбалансированный минеральный состав.', price: 120, unit: 'бут. 0.75л', emoji: '💧', badge: null, color: 'rgba(26,74,107,.07)', catColor: '#1A4A6B', attrs: { Объём: '0.75 л', Минерализация: 'низкая', Страна: 'Италия', Тип: 'Негазированная' } },
-  { id: 14, cat: 'water', name: 'Архыз', brand: 'Архыз', desc: 'Природная горная вода с Кавказа. Слабоминерализованная, идеальна для ежедневного употребления.', price: 45, unit: 'бут. 1.5л', emoji: '🏔️', badge: 'Хит', color: 'rgba(26,74,107,.07)', catColor: '#1A4A6B', attrs: { Объём: '1.5 л', Минерализация: '200-500 мг/л', Страна: 'Россия', Тип: 'Негазированная' } },
-  { id: 15, cat: 'water', name: 'Боржоми', brand: 'Боржоми', desc: 'Природная минеральная вода с высоким содержанием минералов. Лечебно-столовая.', price: 95, unit: 'бут. 0.5л', emoji: '💦', badge: null, color: 'rgba(26,74,107,.07)', catColor: '#1A4A6B', attrs: { Объём: '0.5 л', Минерализация: '5000-7500 мг/л', Страна: 'Грузия', Тип: 'Газированная' } },
-  { id: 16, cat: 'water', name: 'Святой Источник', brand: 'Nestle', desc: 'Российская питьевая вода высшей категории. Обогащена фтором для защиты зубов.', price: 35, unit: 'бут. 1.5л', emoji: '💧', badge: null, color: 'rgba(26,74,107,.07)', catColor: '#1A4A6B', attrs: { Объём: '1.5 л', Минерализация: 'низкая', Страна: 'Россия', Тип: 'Негазированная' } },
-];
+
 const ADDRS = ['Домодедово, тер. Триколор, 11', 'Тула, ул. Щегловская Засека, 31А', 'Тула, ул. Луначарского, 76', 'Рязань, ул. Ряжское шоссе, 20', 'Истра, д. Покровское, Центральная, 27с2'];
-const CATNAMES = { wine: 'Вино', beer: 'Пиво', soda: 'Газировки', water: 'Вода' };
 
 let cart = {}, curCat = 'all', srtMode = '', orders = [], user = null, selAddr = 0, cats = [];
 let allProducts = [];
@@ -203,7 +185,7 @@ function renderProducts(resetLazy = false) {
         ${p.emoji}
       </div>
       <div class="pc-body">
-        <div class="pc-cat" style="color:${p.catColor}">${CATNAMES[p.cat]}</div>
+        <div class="pc-cat" style="color:${p.catColor}">${cats.find(c => c.slug === p.cat)?.name || 'Товар'}</div>
         <div class="pc-name">${p.name}</div>
         <div class="pc-brand">${p.brand}</div>
         <div class="pc-desc">${p.desc.slice(0, 75)}…</div>
@@ -244,7 +226,7 @@ function openProductModal(id) {
   document.getElementById('mcontent').innerHTML = `
     <div class="m-img" style="background:${p.color}">${p.emoji}</div>
     <div class="m-body">
-      <div class="m-cat" style="color:${p.catColor}">${CATNAMES[p.cat]}</div>
+      <div class="m-cat" style="color:${p.catColor}">${cats.find(c => c.slug === p.cat)?.name || 'Товар'}</div>
       <div class="m-name">${p.name}</div>
       <div class="m-brand">${p.brand}</div>
       <div class="m-price-row"><div class="m-price">${p.price}₽</div><div class="m-per">/ ${p.unit}</div></div>
@@ -378,7 +360,7 @@ function calculateCartTotal() {
  */
 function getProductById(id) {
   const key = String(id);
-  return allProducts.find(p => String(p.id) === key) || PRODS.find(p => String(p.id) === key);
+  return allProducts.find(p => String(p.id) === key);
 }
 
 /**
@@ -460,12 +442,21 @@ function renderCheckout() {
     dateInput.min = today;
     dateInput.value = today;
   }
+
+  if (user) {
+    const nmInput = document.getElementById('co-nm');
+    const lnInput = document.getElementById('co-ln');
+    const phInput = document.getElementById('co-ph');
+    if (nmInput) nmInput.value = user.name || '';
+    if (lnInput) lnInput.value = user.lastname || '';
+    if (phInput) phInput.value = user.phone || '';
+  }
 }
 
 /**
  * Обработка оформления заказа
  */
-function placeOrder() {
+async function placeOrder() {
   if (!user) {
     showToast('⚠️', 'Войдите для оформления заказа');
     navigateToView('auth');
@@ -473,7 +464,7 @@ function placeOrder() {
   }
 
   const items = Object.entries(cart)
-    .map(([id, q]) => ({ p: getProductById(id), q }))
+    .map(([id, q]) => ({ id, q, p: getProductById(id) }))
     .filter(x => x.p);
   if (!items.length) {
     showToast('⚠️', 'Корзина пуста');
@@ -482,24 +473,85 @@ function placeOrder() {
 
   const timeSlot = document.querySelector('.tslot.on');
   const dateInput = document.getElementById('co-date');
+  const pDate = dateInput ? dateInput.value : '—';
+  const pTime = timeSlot ? timeSlot.textContent : 'не выбрано';
+  const addr = ADDRS[selAddr];
 
-  const order = {
-    id: '#' + Math.floor(Math.random() * 90000 + 10000),
-    date: new Date().toLocaleDateString('ru-RU'),
-    pDate: dateInput ? dateInput.value : '—',
-    pTime: timeSlot ? timeSlot.textContent : 'не выбрано',
-    addr: ADDRS[selAddr],
-    items: items.map(x => ({ name: x.p.name, emoji: x.p.emoji, q: x.q, price: x.p.price })),
-    total: calculateCartTotal(),
-    status: 'new'
+  const nm = document.getElementById('co-nm') ? document.getElementById('co-nm').value.trim() : '';
+  const ln = document.getElementById('co-ln') ? document.getElementById('co-ln').value.trim() : '';
+  const ph = document.getElementById('co-ph') ? document.getElementById('co-ph').value.trim() : '';
+
+  // Найдем поле комментария по соседству с co-ph, у него нет id
+  const commentEl = document.querySelector('#view-checkout textarea');
+  const userComment = commentEl ? commentEl.value.trim() : '';
+
+  const fullComment = `Самовывоз: ${pDate}, ${pTime}${userComment ? '\nКомментарий: ' + userComment : ''}`;
+
+  const payload = {
+    items: items.map(x => ({ id: x.id, quantity: x.q, price_at_purchase: x.p.price })),
+    total_amount: calculateCartTotal(),
+    delivery_address: addr,
+    customer_name: (nm + ' ' + ln).trim(),
+    customer_phone: ph,
+    comment: fullComment
   };
 
-  orders.unshift(order);
-  cart = {};
-  updateCartBadge();
-  saveToLocalStorage();
-  showToast('🎉', 'Заказ ' + order.id + ' оформлен!');
-  navigateToView('orders');
+  try {
+    const res = await fetch('http://localhost:3000/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Ошибка оформления');
+
+    cart = {};
+    updateCartBadge();
+    saveToLocalStorage();
+    showToast('🎉', 'Заказ #' + data.order_number + ' оформлен!');
+    await loadOrders();
+    navigateToView('orders');
+  } catch (err) {
+    showToast('⚠️', err.message);
+  }
+}
+
+/**
+ * Загружает заказы пользователя с бэкенда
+ */
+async function loadOrders() {
+  if (!user) {
+    orders = [];
+    return;
+  }
+  try {
+    const res = await fetch('http://localhost:3000/api/orders', { credentials: 'include' });
+    if (!res.ok) throw new Error('Failed to load orders');
+    const data = await res.json();
+
+    orders = data.map(o => {
+      // Parse comment to extract date/time if needed, or just keep as comment
+      const commentParts = o.comment ? o.comment.replace('Самовывоз: ', '').split(', ') : ['—', 'не выбрано'];
+      const pDate = commentParts[0] || '—';
+      const pTime = commentParts[1] || 'не выбрано';
+
+      const createdDate = new Date(o.created_at);
+
+      return {
+        id: '#' + o.order_number,
+        date: createdDate.toLocaleDateString('ru-RU'),
+        pDate: pDate,
+        pTime: pTime,
+        addr: o.delivery_address || 'Не указан',
+        items: o.items || [],
+        total: o.total_amount,
+        status: o.status
+      };
+    });
+  } catch (err) {
+    console.error('Error loading orders:', err);
+  }
 }
 
 // ═══ ORDERS ═══
@@ -609,6 +661,7 @@ async function handleLogin() {
     if (!res.ok) throw new Error(data.error || 'Ошибка входа');
 
     await checkAuthStatus();
+    await loadOrders();
     showToast('👋', 'Добро пожаловать!');
     navigateToView('catalogue');
   } catch (err) {
@@ -655,6 +708,7 @@ async function handleRegister() {
     if (!res.ok) throw new Error(data.error || 'Ошибка регистрации');
 
     await checkAuthStatus();
+    await loadOrders();
     showToast('🎉', 'Регистрация успешна!');
     navigateToView('catalogue');
   } catch (err) {
@@ -667,14 +721,15 @@ async function handleRegister() {
  */
 async function handleLogout() {
   try {
-    const res = await fetch('http://localhost:3000/api/auth/logout', { 
-      method: 'POST', 
-      credentials: 'include' 
+    const res = await fetch('http://localhost:3000/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include'
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Ошибка выхода');
 
     user = null;
+    orders = [];
     updateAuthUI();
     navigateToView('home');
     showToast('👋', 'Вы вышли из аккаунта');
@@ -682,6 +737,7 @@ async function handleLogout() {
     console.error('Logout error:', err);
     // В случае ошибки на сервере всё равно сбрасываем локальное состояние для безопасности
     user = null;
+    orders = [];
     updateAuthUI();
     navigateToView('home');
     showToast('👋', 'Сессия завершена');
@@ -831,10 +887,6 @@ async function fetchCategories() {
     const res = await fetch('http://localhost:3000/categories');
     if (!res.ok) throw new Error('Failed to fetch categories');
     cats = await res.json();
-    // Обновляем CATNAMES для использования в UI
-    cats.forEach(c => {
-      CATNAMES[c.slug] = c.name;
-    });
     console.log('Fetched categories from backend:', cats);
     return cats;
   } catch (error) {
@@ -882,7 +934,7 @@ async function loadProductsForCurrentCategory() {
     catColor: p.cat_color || '#1A4A6B',
     attrs: normalizeProductAttrs(
       p.attrs || p.attributes || p.specs,
-      CATNAMES[p.category_slug] || (selectedCat ? selectedCat.name : 'Товар')
+      cats.find(c => c.slug === p.category_slug)?.name || (selectedCat ? selectedCat.name : 'Товар')
     )
   }));
 }
@@ -920,14 +972,9 @@ async function fetchProductsByCategory(categoryId) {
     dateInput.value = today;
   }
 
-  if (!hasDemoOrders) {
-    orders.push({ id: '#48291', date: '15.01.2024', pDate: '16.01.2024', pTime: '10:00–11:00', addr: ADDRS[0], items: [{ name: 'Каберне Совиньон', emoji: '🍷', q: 12, price: 490 }, { name: 'Архыз', emoji: '🏔️', q: 24, price: 45 }], total: 6960, status: 'done' });
-    orders.push({ id: '#48154', date: '12.01.2024', pDate: '13.01.2024', pTime: '14:00–15:00', addr: ADDRS[1], items: [{ name: 'Балтика №3', emoji: '🍺', q: 48, price: 95 }, { name: 'Coca-Cola', emoji: '🥤', q: 12, price: 89 }], total: 5628, status: 'ready' });
-    saveToLocalStorage();
-  }
-
   updateCartBadge();
   await checkAuthStatus();
+  await loadOrders();
   await fetchCategories();
   if (curCat === 'all' && cats.length) curCat = cats[0].slug;
   renderCategoryTabs();

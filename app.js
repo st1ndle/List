@@ -310,7 +310,6 @@ function addToCart(id) {
   updateCartBadge();
   saveToLocalStorage();
   showToast('✓', 'Добавлено в корзину');
-  allProducts = PRODS.slice();
   renderProducts(true);
 }
 
@@ -324,7 +323,6 @@ function updateCartQuantity(id, delta) {
   if (cart[id] <= 0) delete cart[id];
   updateCartBadge();
   saveToLocalStorage();
-  allProducts = PRODS.slice();
   renderProducts(true);
   renderCart();
 }
@@ -368,9 +366,19 @@ function updateCartBadge() {
  */
 function calculateCartTotal() {
   return Object.entries(cart).reduce((sum, [id, qty]) => {
-    const p = allProducts.find(p => p.id == id);
+    const p = getProductById(id);
     return sum + (p ? p.price * qty : 0);
   }, 0);
+}
+
+/**
+ * Ищет товар по ID сначала в текущих данных каталога, затем в локальном демо-списке
+ * @param {number|string} id - ID товара
+ * @returns {object|undefined}
+ */
+function getProductById(id) {
+  const key = String(id);
+  return allProducts.find(p => String(p.id) === key) || PRODS.find(p => String(p.id) === key);
 }
 
 /**
@@ -390,8 +398,11 @@ function renderCart() {
   el.innerHTML = `<div class="clayout">
     <div class="cart-list">
       ${items.map(([id, q]) => {
-    const p = allProducts.find(x => x.id == id);
-    return `<div class="ci"><div class="ci-emoji">${p.emoji}</div><div class="ci-info"><div class="ci-name">${p.name}</div><div class="ci-meta">${p.brand} · ${p.unit} · ${p.price}₽/шт.</div></div><div class="qty-wrap"><button class="qb" onclick="updateCartQuantity(${id},-1)">−</button><span class="qn">${q}</span><button class="qb" onclick="updateCartQuantity(${id},1)">+</button></div><div class="ci-price">${p.price * q}₽</div><button class="ci-del" onclick="removeFromCart(${id})" aria-label="Удалить">✕</button></div>`;
+    const p = getProductById(id);
+    if (!p) {
+      return `<div class="ci"><div class="ci-emoji">📦</div><div class="ci-info"><div class="ci-name">Товар недоступен</div><div class="ci-meta">ID: ${id}</div></div><div class="qty-wrap"><button class="qb" onclick='updateCartQuantity(${JSON.stringify(id)},-1)'>−</button><span class="qn">${q}</span><button class="qb" onclick='updateCartQuantity(${JSON.stringify(id)},1)'>+</button></div><div class="ci-price">—</div><button class="ci-del" onclick='removeFromCart(${JSON.stringify(id)})' aria-label="Удалить">✕</button></div>`;
+    }
+    return `<div class="ci"><div class="ci-emoji">${p.emoji}</div><div class="ci-info"><div class="ci-name">${p.name}</div><div class="ci-meta">${p.brand} · ${p.unit} · ${p.price}₽/шт.</div></div><div class="qty-wrap"><button class="qb" onclick='updateCartQuantity(${JSON.stringify(id)},-1)'>−</button><span class="qn">${q}</span><button class="qb" onclick='updateCartQuantity(${JSON.stringify(id)},1)'>+</button></div><div class="ci-price">${p.price * q}₽</div><button class="ci-del" onclick='removeFromCart(${JSON.stringify(id)})' aria-label="Удалить">✕</button></div>`;
   }).join('')}
     </div>
     <div class="csum">
@@ -436,7 +447,8 @@ function renderCheckout() {
   if (!ci) return;
 
   ci.innerHTML = items.map(([id, q]) => {
-    const p = allProducts.find(x => x.id == id);
+    const p = getProductById(id);
+    if (!p) return '';
     return `<div class="crow"><span class="crow-lbl">${p.emoji} ${p.name} ×${q}</span><span class="crow-val">${p.price * q}₽</span></div>`;
   }).join('');
 
@@ -460,7 +472,9 @@ function placeOrder() {
     return;
   }
 
-  const items = Object.entries(cart).map(([id, q]) => ({ p: allProducts.find(x => x.id == id), q }));
+  const items = Object.entries(cart)
+    .map(([id, q]) => ({ p: getProductById(id), q }))
+    .filter(x => x.p);
   if (!items.length) {
     showToast('⚠️', 'Корзина пуста');
     return;

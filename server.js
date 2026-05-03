@@ -80,7 +80,7 @@ app.post('/api/auth/register', async (req, res) => {
       .input('email', sql.NVarChar, cleanE)
       .input('hash', sql.NVarChar, hash)
       .query('INSERT INTO users (first_name, last_name, phone, email, password_hash) OUTPUT INSERTED.id VALUES (@firstName, @lastName, @phone, @email, @hash)');
-    
+
     const userId = result.recordset[0].id;
     req.session.userId = userId;
     res.json({ status: 'ok', userId });
@@ -95,14 +95,14 @@ app.post('/api/auth/login', async (req, res) => {
     if (!login || !password) {
       return res.status(400).json({ error: 'Введите логин и пароль' });
     }
-    
+
     let isEmail = login.includes('@');
     let searchValue = isEmail ? login.toLowerCase().trim() : login.replace(/\D/g, '');
 
     const p = await getPool();
-    
-    let query = isEmail 
-      ? 'SELECT * FROM users WHERE email = @val' 
+
+    let query = isEmail
+      ? 'SELECT * FROM users WHERE email = @val'
       : 'SELECT * FROM users WHERE phone = @val';
 
     console.log(`Поиск пользователя: isEmail=${isEmail}, searchValue='${searchValue}'`);
@@ -119,7 +119,7 @@ app.post('/api/auth/login', async (req, res) => {
     const user = result.recordset[0];
     const isMatch = await bcrypt.compare(password, user.password_hash);
     console.log(`Проверка пароля: isMatch=${isMatch}`);
-    
+
     if (!isMatch) {
       return res.status(401).json({ error: 'Неверный логин или пароль' });
     }
@@ -154,7 +154,7 @@ app.get('/api/auth/me', async (req, res) => {
     console.log('Session ID:', req.sessionID);
     console.log('Session userId:', req.session.userId);
     console.log('Cookies:', req.headers.cookie);
-    
+
     if (!req.session.userId) {
       return res.json({ user: null });
     }
@@ -162,7 +162,7 @@ app.get('/api/auth/me', async (req, res) => {
     const result = await p.request()
       .input('id', sql.NVarChar, req.session.userId)
       .query('SELECT id, first_name, last_name, phone, email, role FROM users WHERE id = @id');
-    
+
     if (result.recordset.length === 0) {
       console.log('User not found in DB for id:', req.session.userId);
       return res.status(401).json({ error: 'User not found' });
@@ -208,7 +208,7 @@ app.get('/products', async (req, res) => {
     const p = await getPool();
     const categoryId = req.query.category_id;
     let result;
-    
+
     if (categoryId) {
       result = await p.request()
         .input('categoryId', sql.VarChar, categoryId)
@@ -217,7 +217,7 @@ app.get('/products', async (req, res) => {
       result = await p.request()
         .query('SELECT * FROM products ORDER BY name');
     }
-    
+
     const products = result.recordset.map(product => {
       if (product.attributes && typeof product.attributes === 'string') {
         try {
@@ -228,7 +228,7 @@ app.get('/products', async (req, res) => {
       }
       return product;
     });
-    
+
     res.json(products);
   } catch (error) {
     res.status(500).json({

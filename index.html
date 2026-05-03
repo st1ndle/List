@@ -97,7 +97,7 @@
         <h2 class="sec-title">В режиме нон-стоп с 1998 года</h2>
         <p style="color:var(--ink2);font-size:15px;line-height:1.75;margin-top:16px">Компания успешно функционирует на рынке с 1998 года. В начале пути специализировалась на дистрибуции для крупных оптовых клиентов. Первым якорным клиентом стала международная группа <strong>Anadolu Efes</strong>.</p>
         <p style="color:var(--ink2);font-size:15px;line-height:1.75;margin-top:12px">Сегодня ежедневно обрабатывается, принимается на хранение и доставляется более чем по <strong>2 000 адресов</strong> Москвы и МО порядка <strong>500 тонн грузов</strong>. В штате — 150 профессионалов.</p>
-        <button class="btn-solid" style="margin-top:28px;padding:12px 28px;font-size:14px" onclick="go('about')">Читать подробнее →</button>
+        <button class="btn-solid" style="margin-top:28px;padding:12px 28px;font-size:14px" onclick="navigateToView('about')">Читать подробнее →</button>
       </div>
       <div class="about-visual">
         <div class="av-card">
@@ -132,37 +132,37 @@
       <p class="sec-sub">Всё необходимое для хранения, обработки и доставки ваших грузов под одной крышей.</p>
     </div>
     <div class="svcs-grid">
-      <div class="svc" onclick="go('services')">
+      <div class="svc" onclick="navigateToView('services')">
         <div class="svc-icon">🏭</div>
         <div class="svc-title">Ответственное хранение</div>
         <div class="svc-desc">Напольное и стеллажное хранение с соблюдением оптимальной температуры и влажности. Склад категории А в Домодедово.</div>
         <div class="svc-price">от 32 ₽ / пал. в сутки</div>
       </div>
-      <div class="svc" onclick="go('services')">
+      <div class="svc" onclick="navigateToView('services')">
         <div class="svc-icon">📦</div>
         <div class="svc-title">Комплектация и маркировка</div>
         <div class="svc-desc">Комплектуем заказы, наносим штрих-коды и маркировку по требованиям заказчика. Передача в службу доставки или самовывоз.</div>
         <div class="svc-price">от 7 ₽ / шт.</div>
       </div>
-      <div class="svc" onclick="go('services')">
+      <div class="svc" onclick="navigateToView('services')">
         <div class="svc-icon">🚛</div>
         <div class="svc-title">Доставка грузов</div>
         <div class="svc-desc">Доставка «от двери до двери» по Москве и Московской области. 120 единиц транспорта от малотоннажного до крупнотоннажного.</div>
         <div class="svc-price">от 18 000 ₽ / 5 тонн</div>
       </div>
-      <div class="svc" onclick="go('services')">
+      <div class="svc" onclick="navigateToView('services')">
         <div class="svc-icon">🔄</div>
         <div class="svc-title">Кросс-докинг</div>
         <div class="svc-desc">Перегрузка товара и краткосрочное хранение грузовыми местами. Минимальные сроки обработки.</div>
         <div class="svc-price">от 180 ₽ / монопаллет</div>
       </div>
-      <div class="svc" onclick="go('services')">
+      <div class="svc" onclick="navigateToView('services')">
         <div class="svc-icon">🏗️</div>
         <div class="svc-title">Погрузка / разгрузка</div>
         <div class="svc-desc">Механизированным способом или вручную, в соответствии с характеристиками груза.</div>
         <div class="svc-price">от 140 ₽ / паллет</div>
       </div>
-      <div class="svc" onclick="go('services')">
+      <div class="svc" onclick="navigateToView('services')">
         <div class="svc-icon">📋</div>
         <div class="svc-title">Опалечивание</div>
         <div class="svc-desc">Укладка товара на паллеты и фиксация стрейч-плёнкой для безопасной транспортировки.</div>
@@ -529,8 +529,8 @@
         <div class="a-title">С возвращением!</div>
         <div class="a-hint">Введите данные вашего аккаунта</div>
         <div class="auth-tabs auth-tabs-sub">
-          <div class="a-tab a-tab-login on" onclick="loginMethodTab('email')">Почта</div>
-          <div class="a-tab a-tab-login" onclick="loginMethodTab('phone')">Телефон</div>
+          <div class="a-tab a-tab-login on" onclick="switchLoginMethod('email')">Почта</div>
+          <div class="a-tab a-tab-login" onclick="switchLoginMethod('phone')">Телефон</div>
         </div>
         <div class="fg" id="l-email-wrap"><label class="flbl">Почта</label><input class="finp" id="l-email" placeholder="name@company.ru"></div>
         <div class="fg" id="l-phone-wrap" style="display:none"><label class="flbl">Телефон</label><input class="finp" id="l-phone" placeholder="+7 (___) ___-__-__"></div>

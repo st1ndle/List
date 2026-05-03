@@ -304,6 +304,35 @@ function toast(ic,msg){
   t._t=setTimeout(()=>t.classList.remove('show'),3200);
 }
 
+
+// ═══ API ═══
+async function fetchCategories() {
+  try {
+    const res = await fetch('http://localhost:3000/categories');
+    if (!res.ok) throw new Error('Failed to fetch categories');
+    const data = await res.json();
+    console.log('Fetched categories from backend:', data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+  }
+}
+
+async function fetchProductsByCategory(categoryId) {
+  try {
+    const url = categoryId && categoryId !== 'all' 
+      ? `http://localhost:3000/products?category_id=${categoryId}` 
+      : 'http://localhost:3000/products';
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch products');
+    const data = await res.json();
+    console.log(`Fetched products for category ${categoryId || 'all'} from backend:`, data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching products:', error);
+  }
+}
+
 // ═══ INIT ═══
 (function(){
   loadState();
@@ -320,4 +349,8 @@ function toast(ic,msg){
   updBadge();
   updAuthUI();
   goPath(window.location.pathname);
+
+  // Вызовы бэкенд ручек
+  fetchCategories();
+  fetchProductsByCategory('11111111-1111-1111-1111-111111111111');
 })();

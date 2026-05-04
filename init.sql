@@ -1,93 +1,154 @@
--- Таблица категорий
-CREATE TABLE categories (
-    id VARCHAR(36) PRIMARY KEY,
-    slug NVARCHAR(255) NOT NULL UNIQUE,
-    name NVARCHAR(255) NOT NULL,
-    color_hex VARCHAR(50) NOT NULL,
-    sort_order INT DEFAULT 0,
-    is_active BIT DEFAULT 1
-);
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
 
--- Таблица товаров (напитков)
-CREATE TABLE products (
-    id VARCHAR(36) PRIMARY KEY,
+IF OBJECT_ID(N'dbo.order_items', N'U') IS NOT NULL DROP TABLE dbo.order_items;
+IF OBJECT_ID(N'dbo.orders', N'U') IS NOT NULL DROP TABLE dbo.orders;
+IF OBJECT_ID(N'dbo.sessions', N'U') IS NOT NULL DROP TABLE dbo.sessions;
+IF OBJECT_ID(N'dbo.products', N'U') IS NOT NULL DROP TABLE dbo.products;
+IF OBJECT_ID(N'dbo.categories', N'U') IS NOT NULL DROP TABLE dbo.categories;
+IF OBJECT_ID(N'dbo.users', N'U') IS NOT NULL DROP TABLE dbo.users;
+GO
+
+CREATE TABLE dbo.categories (
+    id VARCHAR(36) NOT NULL,
+    slug NVARCHAR(64) NOT NULL,
+    name NVARCHAR(255) NOT NULL,
+    color_hex CHAR(7) NOT NULL,
+    sort_order INT NOT NULL CONSTRAINT DF_Categories_SortOrder DEFAULT (0),
+    is_active BIT NOT NULL CONSTRAINT DF_Categories_IsActive DEFAULT (1),
+    created_at DATETIME2(0) NOT NULL CONSTRAINT DF_Categories_CreatedAt DEFAULT SYSUTCDATETIME(),
+    updated_at DATETIME2(0) NOT NULL CONSTRAINT DF_Categories_UpdatedAt DEFAULT SYSUTCDATETIME(),
+
+    CONSTRAINT PK_Categories PRIMARY KEY CLUSTERED (id),
+    CONSTRAINT UQ_Categories_Slug UNIQUE (slug),
+    CONSTRAINT UQ_Categories_IdSlug UNIQUE (id, slug),
+    CONSTRAINT CHK_Categories_Id_Guid CHECK (TRY_CONVERT(UNIQUEIDENTIFIER, id) IS NOT NULL),
+    CONSTRAINT CHK_Categories_ColorHex CHECK (color_hex LIKE '#[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]'),
+    CONSTRAINT CHK_Categories_SortOrder CHECK (sort_order >= 0)
+);
+GO
+
+CREATE TABLE dbo.products (
+    id VARCHAR(36) NOT NULL,
     category_id VARCHAR(36) NOT NULL,
+    category_slug NVARCHAR(64) NOT NULL,
     name NVARCHAR(255) NOT NULL,
     brand NVARCHAR(255) NOT NULL,
-    description NVARCHAR(MAX),
+    description NVARCHAR(MAX) NULL,
     price DECIMAL(10, 2) NOT NULL,
-    unit_name NVARCHAR(50) NOT NULL,
-    emoji NVARCHAR(50),
-    badge NVARCHAR(50),
-    bg_color VARCHAR(50),
-    attributes NVARCHAR(MAX),
-    stock_quantity INT DEFAULT 0,
-    is_active BIT DEFAULT 1,
-    created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
-    updated_at DATETIME2 DEFAULT SYSUTCDATETIME(),
-    
-    CONSTRAINT FK_Products_Categories FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
-    CONSTRAINT CHK_Products_Attributes_JSON CHECK (attributes IS NULL OR ISJSON(attributes) = 1)
+    unit NVARCHAR(50) NOT NULL,
+    emoji NVARCHAR(16) NULL,
+    badge NVARCHAR(50) NULL,
+    color NVARCHAR(50) NULL,
+    attributes NVARCHAR(MAX) NULL,
+    stock_quantity INT NOT NULL CONSTRAINT DF_Products_StockQuantity DEFAULT (0),
+    is_active BIT NOT NULL CONSTRAINT DF_Products_IsActive DEFAULT (1),
+    created_at DATETIME2(0) NOT NULL CONSTRAINT DF_Products_CreatedAt DEFAULT SYSUTCDATETIME(),
+    updated_at DATETIME2(0) NOT NULL CONSTRAINT DF_Products_UpdatedAt DEFAULT SYSUTCDATETIME(),
+
+    CONSTRAINT PK_Products PRIMARY KEY CLUSTERED (id),
+    CONSTRAINT FK_Products_Categories FOREIGN KEY (category_id, category_slug)
+        REFERENCES dbo.categories(id, slug)
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION,
+    CONSTRAINT CHK_Products_Id_Guid CHECK (TRY_CONVERT(UNIQUEIDENTIFIER, id) IS NOT NULL),
+    CONSTRAINT CHK_Products_Price CHECK (price >= 0),
+    CONSTRAINT CHK_Products_StockQuantity CHECK (stock_quantity >= 0),
+    CONSTRAINT CHK_Products_AttributesJson CHECK (attributes IS NULL OR ISJSON(attributes) = 1)
 );
+GO
 
-CREATE INDEX idx_products_category_id ON products(category_id);
+CREATE INDEX IX_Products_CategoryId ON dbo.products(category_id);
+CREATE INDEX IX_Products_CategorySlug ON dbo.products(category_slug);
+CREATE INDEX IX_Products_IsActive_Name ON dbo.products(is_active, name);
+GO
 
-CREATE TABLE users (
-    id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+CREATE TABLE dbo.users (
+    id UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Users_Id DEFAULT NEWID(),
     first_name NVARCHAR(100) NOT NULL,
-    last_name NVARCHAR(100),
-    phone NVARCHAR(20) UNIQUE,
-    email NVARCHAR(255) UNIQUE,
+    last_name NVARCHAR(100) NULL,
+    phone NVARCHAR(20) NULL,
+    email NVARCHAR(255) NULL,
     password_hash NVARCHAR(255) NOT NULL,
-    role NVARCHAR(20) NOT NULL DEFAULT 'user',
-    is_active BIT DEFAULT 1,
-    created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
-    updated_at DATETIME2 DEFAULT SYSUTCDATETIME(),
-    
-    CONSTRAINT CHK_Users_Role CHECK (role IN ('user', 'admin'))
+    role NVARCHAR(20) NOT NULL CONSTRAINT DF_Users_Role DEFAULT N'user',
+    is_active BIT NOT NULL CONSTRAINT DF_Users_IsActive DEFAULT (1),
+    created_at DATETIME2(0) NOT NULL CONSTRAINT DF_Users_CreatedAt DEFAULT SYSUTCDATETIME(),
+    updated_at DATETIME2(0) NOT NULL CONSTRAINT DF_Users_UpdatedAt DEFAULT SYSUTCDATETIME(),
+
+    CONSTRAINT PK_Users PRIMARY KEY CLUSTERED (id),
+    CONSTRAINT CHK_Users_Contact CHECK (phone IS NOT NULL OR email IS NOT NULL),
+    CONSTRAINT CHK_Users_Role CHECK (role IN (N'user', N'admin')),
+    CONSTRAINT CHK_Users_Email CHECK (email IS NULL OR email LIKE N'%_@_%._%')
 );
+GO
 
-CREATE INDEX IX_Users_Phone ON users(phone);
+CREATE UNIQUE INDEX IX_Users_Phone ON dbo.users(phone) WHERE phone IS NOT NULL;
+CREATE UNIQUE INDEX IX_Users_Email ON dbo.users(email) WHERE email IS NOT NULL;
+GO
 
--- Таблица сессий для connect-mssql-v2
-CREATE TABLE [sessions] (
-    [sid] VARCHAR(255) NOT NULL PRIMARY KEY,
-    [session] VARCHAR(MAX) NOT NULL,
-    [expires] DATETIME NOT NULL
+CREATE TABLE dbo.sessions (
+    sid VARCHAR(255) NOT NULL,
+    session NVARCHAR(MAX) NOT NULL,
+    expires DATETIME NOT NULL,
+
+    CONSTRAINT PK_Sessions PRIMARY KEY CLUSTERED (sid)
 );
+GO
 
--- Таблица заказов
-CREATE TABLE orders (
-    id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-    order_number INT IDENTITY(1000, 1) UNIQUE NOT NULL, -- Человекочитаемый номер заказа (автоинкремент, начинается с 1000)
-    user_id UNIQUEIDENTIFIER NULL, -- Привязка к пользователю (NULL если можно заказывать без регистрации)
-    status NVARCHAR(50) NOT NULL DEFAULT 'new', -- Статус: new, processing, completed, cancelled
-    total_amount DECIMAL(10, 2) NOT NULL, -- Общая сумма заказа
-    customer_name NVARCHAR(100) NOT NULL, -- Имя заказчика
-    customer_phone NVARCHAR(20) NOT NULL, -- Контактный телефон
-    delivery_address NVARCHAR(MAX), -- Адрес доставки (можно NULL, если самовывоз)
-    comment NVARCHAR(MAX), -- Комментарий к заказу
-    created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
-    updated_at DATETIME2 DEFAULT SYSUTCDATETIME(),
-    
-    CONSTRAINT FK_Orders_Users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-    CONSTRAINT CHK_Orders_Status CHECK (status IN ('new', 'processing', 'completed', 'cancelled'))
+CREATE INDEX IX_Sessions_Expires ON dbo.sessions(expires);
+GO
+
+CREATE TABLE dbo.orders (
+    id UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Orders_Id DEFAULT NEWID(),
+    order_number INT IDENTITY(1000, 1) NOT NULL,
+    user_id UNIQUEIDENTIFIER NULL,
+    status NVARCHAR(20) NOT NULL CONSTRAINT DF_Orders_Status DEFAULT N'new',
+    total_amount DECIMAL(10, 2) NOT NULL,
+    customer_name NVARCHAR(100) NOT NULL,
+    customer_phone NVARCHAR(20) NOT NULL,
+    delivery_address NVARCHAR(MAX) NULL,
+    comment NVARCHAR(MAX) NULL,
+    created_at DATETIME2(0) NOT NULL CONSTRAINT DF_Orders_CreatedAt DEFAULT SYSUTCDATETIME(),
+    updated_at DATETIME2(0) NOT NULL CONSTRAINT DF_Orders_UpdatedAt DEFAULT SYSUTCDATETIME(),
+
+    CONSTRAINT PK_Orders PRIMARY KEY CLUSTERED (id),
+    CONSTRAINT UQ_Orders_OrderNumber UNIQUE (order_number),
+    CONSTRAINT FK_Orders_Users FOREIGN KEY (user_id)
+        REFERENCES dbo.users(id)
+        ON UPDATE NO ACTION
+        ON DELETE SET NULL,
+    CONSTRAINT CHK_Orders_Status CHECK (status IN (N'new', N'processing', N'ready', N'done')),
+    CONSTRAINT CHK_Orders_TotalAmount CHECK (total_amount >= 0)
 );
+GO
 
-CREATE INDEX IX_Orders_UserId ON orders(user_id);
-CREATE INDEX IX_Orders_OrderNumber ON orders(order_number);
+CREATE INDEX IX_Orders_UserId_CreatedAt ON dbo.orders(user_id, created_at DESC);
+CREATE INDEX IX_Orders_Status ON dbo.orders(status);
+GO
 
--- Таблица позиций заказа (какие продукты и сколько)
-CREATE TABLE order_items (
-    id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+CREATE TABLE dbo.order_items (
+    id UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_OrderItems_Id DEFAULT NEWID(),
     order_id UNIQUEIDENTIFIER NOT NULL,
-    product_id VARCHAR(36) NOT NULL, -- Обрати внимание, в таблице products id имеет тип VARCHAR(36)
+    product_id VARCHAR(36) NOT NULL,
     quantity INT NOT NULL,
-    price_at_purchase DECIMAL(10, 2) NOT NULL, -- Фиксируем цену товара на момент покупки (если цена в каталоге изменится, в чеке останется старая)
-    
-    CONSTRAINT FK_OrderItems_Orders FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    CONSTRAINT FK_OrderItems_Products FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE NO ACTION,
-    CONSTRAINT CHK_OrderItems_Quantity CHECK (quantity > 0)
-);
+    price_at_purchase DECIMAL(10, 2) NOT NULL,
+    created_at DATETIME2(0) NOT NULL CONSTRAINT DF_OrderItems_CreatedAt DEFAULT SYSUTCDATETIME(),
 
-CREATE INDEX IX_OrderItems_OrderId ON order_items(order_id);
+    CONSTRAINT PK_OrderItems PRIMARY KEY CLUSTERED (id),
+    CONSTRAINT FK_OrderItems_Orders FOREIGN KEY (order_id)
+        REFERENCES dbo.orders(id)
+        ON UPDATE NO ACTION
+        ON DELETE CASCADE,
+    CONSTRAINT FK_OrderItems_Products FOREIGN KEY (product_id)
+        REFERENCES dbo.products(id)
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION,
+    CONSTRAINT CHK_OrderItems_Quantity CHECK (quantity > 0),
+    CONSTRAINT CHK_OrderItems_PriceAtPurchase CHECK (price_at_purchase >= 0)
+);
+GO
+
+CREATE INDEX IX_OrderItems_OrderId ON dbo.order_items(order_id);
+CREATE INDEX IX_OrderItems_ProductId ON dbo.order_items(product_id);
+GO

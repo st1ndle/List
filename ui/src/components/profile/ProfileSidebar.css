@@ -1,0 +1,72 @@
+.prof-side {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 26px;
+  position: sticky;
+  top: 80px;
+}
+
+.p-avatar {
+  width: 70px;
+  height: 70px;
+  background: var(--green);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  color: #fff;
+  margin: 0 auto 14px;
+  letter-spacing: 1px;
+}
+
+.p-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 0.3px;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.p-phone {
+  font-size: 13px;
+  color: var(--ink3);
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.smenu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sitem {
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink2);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sitem:hover {
+  background: var(--bg2);
+}
+
+.sitem.on {
+  background: var(--green-light);
+  color: var(--green);
+}
+
+@media (max-width: 720px) {
+  .prof-side {
+    position: static;
+  }
+}

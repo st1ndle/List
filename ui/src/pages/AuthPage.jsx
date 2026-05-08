@@ -1,9 +1,9 @@
 import AuthFormContainer from '../containers/blocks/AuthFormContainer';
-import './Page.css';
+import './AuthPage.css';
 
 function AuthPage() {
   return (
-    <main className="page-shell">
+    <main className="auth-page">
       <AuthFormContainer />
     </main>
   );

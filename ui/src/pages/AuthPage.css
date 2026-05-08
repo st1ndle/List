@@ -1,0 +1,8 @@
+.auth-page {
+  padding-top: 68px; /* Offset for fixed header */
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+}

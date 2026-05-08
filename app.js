@@ -24,6 +24,11 @@ const VIEW_TO_PATH = Object.fromEntries(Object.entries(PATH_TO_VIEW).map(([k, v]
 const PROTECTED_VIEWS = new Set(['checkout', 'orders', 'profile']);
 const STORAGE_KEYS = { cart: 'diplom_cart', orders: 'diplom_orders', user: 'diplom_user' };
 let hasDemoOrders = false;
+const API_BASE_URL = window.__API_BASE_URL__ || 'http://localhost:3000';
+
+function apiUrl(path) {
+  return `${API_BASE_URL}${path}`;
+}
 
 /**
  * Сохраняет текущее состояние корзины и заказов в LocalStorage
@@ -884,7 +889,7 @@ async function checkAuthStatus() {
  */
 async function fetchCategories() {
   try {
-    const res = await fetch('http://localhost:3000/categories');
+    const res = await fetch(apiUrl('/categories'));
     if (!res.ok) throw new Error('Failed to fetch categories');
     cats = await res.json();
     console.log('Fetched categories from backend:', cats);
@@ -920,23 +925,29 @@ async function loadProductsForCurrentCategory() {
 
   if (!Array.isArray(productsFromApi)) return;
 
-  allProducts = productsFromApi.map(p => ({
-    id: p.id,
-    cat: p.category_slug || (selectedCat ? selectedCat.slug : 'other'),
-    name: p.name,
-    brand: p.brand || 'Без бренда',
-    desc: p.description || 'Описание скоро появится.',
-    price: Number(p.price) || 0,
-    unit: p.unit || 'шт.',
-    emoji: p.emoji || '📦',
-    badge: p.badge || null,
-    color: p.color || 'rgba(26,74,107,.07)',
-    catColor: p.cat_color || '#1A4A6B',
-    attrs: normalizeProductAttrs(
-      p.attrs || p.attributes || p.specs,
-      cats.find(c => c.slug === p.category_slug)?.name || (selectedCat ? selectedCat.name : 'Товар')
-    )
-  }));
+  const categoriesById = Object.fromEntries(cats.map((category) => [String(category.id), category]));
+
+  allProducts = productsFromApi.map((p) => {
+    const category = categoriesById[String(p.category_id)] || selectedCat || null;
+
+    return {
+      id: p.id,
+      cat: category?.slug || 'other',
+      name: p.name,
+      brand: p.brand || 'Без бренда',
+      desc: p.description || 'Описание скоро появится.',
+      price: Number(p.price) || 0,
+      unit: p.unit_name || p.unit || 'шт.',
+      emoji: p.emoji || '📦',
+      badge: p.badge || null,
+      color: p.bg_color || p.color || 'rgba(26,74,107,.07)',
+      catColor: category?.color_hex || p.cat_color || '#1A4A6B',
+      attrs: normalizeProductAttrs(
+        p.attrs || p.attributes || p.specs,
+        category?.name || 'Товар'
+      ),
+    };
+  });
 }
 
 /**
@@ -946,8 +957,8 @@ async function loadProductsForCurrentCategory() {
 async function fetchProductsByCategory(categoryId) {
   try {
     const url = categoryId && categoryId !== 'all'
-      ? `http://localhost:3000/products?category_id=${categoryId}`
-      : 'http://localhost:3000/products';
+      ? apiUrl(`/products?category_id=${categoryId}`)
+      : apiUrl('/products');
     const res = await fetch(url);
     if (!res.ok) throw new Error('Failed to fetch products');
     return await res.json();

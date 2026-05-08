@@ -1,0 +1,2 @@
+.auth-form-container__form { max-width: 360px; display: grid; gap: 10px; }
+.auth-form-container__form input { border: 1px solid var(--border); border-radius: 10px; padding: 12px; background: var(--card); }

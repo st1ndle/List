@@ -1,0 +1,13 @@
+.app-root {
+  min-height: 100vh;
+  padding-top: 68px;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Geologica', sans-serif;
+}
+
+@media (max-width: 720px) {
+  .app-root {
+    padding-top: 112px;
+  }
+}

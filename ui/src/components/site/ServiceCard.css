@@ -1,0 +1,14 @@
+.service-card { display: grid; gap: 10px; padding: 20px; border-radius: 14px; border: 1px solid var(--border); background: var(--card); }
+.service-card__icon { font-size: 24px; }
+.service-card__title { font-size: 18px; }
+.service-card__desc { color: var(--ink2); font-size: 14px; }
+.service-card__price { color: var(--green); font-weight: 700; }
+
+.svc--interactive {
+  cursor: pointer;
+}
+
+.svc--interactive:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}

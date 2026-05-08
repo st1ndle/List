@@ -1,0 +1,27 @@
+.hero-banner { display: grid; gap: 16px; padding: 32px; background: linear-gradient(135deg, #f7f5f0 0%, #e8f5ee 100%); border: 1px solid var(--border); border-radius: 20px; }
+.hero-banner__title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(42px, 8vw, 88px); line-height: .95; }
+.hero-banner__description { color: var(--ink2); max-width: 640px; }
+.hero-banner__actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+.cat-pill {
+  border: 1px solid rgba(255, 255, 255, .15);
+  width: 100%;
+  text-align: left;
+}
+
+.cat-pill-text {
+  min-width: 0;
+}
+
+.hero-badge__prefix {
+  font-size: 18px;
+}
+
+.hero-badge__price {
+  font-size: 26px;
+}
+
+.hero-badge__suffix {
+  font-size: 11px;
+  letter-spacing: 1px;
+}

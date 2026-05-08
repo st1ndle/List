@@ -1,0 +1,49 @@
+.tariffs-page .section {
+  padding-top: 36px;
+}
+
+.tariffs-page__grid {
+  margin-top: 48px;
+}
+
+.tariffs-page__note {
+  background: var(--gold-light);
+  border: 1px solid rgba(200, 146, 10, .25);
+  border-radius: 16px;
+  padding: 24px 28px;
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.tariffs-page__note-icon {
+  font-size: 28px;
+}
+
+.tariffs-page__note-title {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.tariffs-page__note-text {
+  font-size: 14px;
+  color: var(--ink2);
+}
+
+@media (max-width: 980px) {
+  .tariffs-page .section {
+    padding: 24px 18px 56px;
+  }
+
+  .tariffs-page__grid {
+    margin-top: 28px;
+    grid-template-columns: 1fr;
+  }
+
+  .tariffs-page__note {
+    padding: 18px;
+    align-items: flex-start;
+  }
+}

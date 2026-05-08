@@ -1,0 +1,6 @@
+.product-card { border: 1px solid var(--border); border-radius: 14px; background: var(--card); padding: 16px; display: grid; gap: 8px; }
+.product-card__meta { color: var(--ink3); font-size: 12px; text-transform: uppercase; }
+.product-card__name { font-size: 17px; }
+.product-card__volume { color: var(--ink2); font-size: 14px; }
+.product-card__bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.product-card__price { font-size: 18px; color: var(--green); font-weight: 700; }

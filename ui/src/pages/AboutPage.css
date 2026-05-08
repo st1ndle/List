@@ -1,0 +1,56 @@
+.about-page .section {
+  padding-top: 36px;
+}
+
+.about-page__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  margin-top: 40px;
+}
+
+.about-page__paragraph {
+  font-size: 15px;
+  color: var(--ink2);
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+
+.about-page__paragraph:last-child {
+  margin-bottom: 0;
+}
+
+.about-page__warehouses {
+  margin-top: 16px;
+  background: var(--green-light);
+  border: 1px solid rgba(26, 92, 56, .2);
+  border-radius: 16px;
+  padding: 20px 24px;
+}
+
+.about-page__warehouses-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 8px;
+}
+
+.about-page__warehouses-list {
+  font-size: 13px;
+  color: var(--ink2);
+  line-height: 1.7;
+}
+
+@media (max-width: 980px) {
+  .about-page .section {
+    padding: 24px 18px 56px;
+  }
+
+  .about-page__grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    margin-top: 28px;
+  }
+}

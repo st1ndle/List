@@ -1,0 +1,19 @@
+.contact-request-form__privacy {
+  font-size: 11px;
+  color: var(--ink3);
+  margin-bottom: 14px;
+}
+
+.contact-request-form__submit {
+  width: 100%;
+  padding: 13px;
+  font-size: 15px;
+  border-radius: 12px;
+}
+
+.contact-request-form__success {
+  margin-top: 14px;
+  color: var(--green);
+  font-weight: 600;
+  font-size: 13px;
+}

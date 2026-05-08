@@ -1,0 +1,19 @@
+.contacts-page .section {
+  padding-top: 36px;
+}
+
+.contacts-page__grid {
+  margin-top: 40px;
+}
+
+@media (max-width: 980px) {
+  .contacts-page .section {
+    padding: 24px 18px 56px;
+  }
+
+  .contacts-page__grid {
+    margin-top: 28px;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}

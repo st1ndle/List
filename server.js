@@ -342,6 +342,76 @@ app.get('/products', async (req, res) => {
   }
 });
 
+app.post('/api/categories/lowest-prices', async (req, res) => {
+  try {
+    const { categories, limit = 4 } = req.body || {};
+    const p = await getPool();
+
+    if (categories && Array.isArray(categories) && categories.length > 0) {
+      const request = p.request();
+      let placeholders = categories.map((c, i) => {
+        request.input(`cat${i}`, sql.NVarChar, c);
+        return `@cat${i}`;
+      }).join(',');
+      
+      const query = `
+        SELECT
+          c.id as category_id,
+          c.name as category_name,
+          MIN(p.price) as min_price,
+          (
+            SELECT TOP 1 p2.emoji
+            FROM products p2
+            WHERE p2.category_id = c.id
+            ORDER BY p2.price ASC, p2.name ASC
+          ) as category_icon
+        FROM categories c
+        LEFT JOIN products p ON c.id = p.category_id 
+        WHERE c.id IN (${placeholders}) OR c.name IN (${placeholders})
+        GROUP BY c.id, c.name
+      `;
+      const result = await request.query(query);
+      res.json(result.recordset);
+    } else {
+      const limitVal = parseInt(limit, 10) || 4;
+      const query = `
+        SELECT TOP ${limitVal}
+          c.id as category_id,
+          c.name as category_name,
+          MIN(p.price) as min_price,
+          (
+            SELECT TOP 1 p2.emoji
+            FROM products p2
+            WHERE p2.category_id = c.id
+            ORDER BY p2.price ASC, p2.name ASC
+          ) as category_icon
+        FROM categories c
+        JOIN products p ON c.id = p.category_id 
+        GROUP BY c.id, c.name 
+        ORDER BY min_price ASC
+      `;
+      const result = await p.request().query(query);
+      res.json(result.recordset);
+    }
+  } catch (error) {
+    console.error('Lowest prices error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/warehouses', async (req, res) => {
+  try {
+    // Временно возвращаем заглушку
+    const warehouses = [
+      { id: '1', name: 'Склад Домодедово (Основной)', address: 'г. Домодедово, ул. Логистическая, 1/6', type: 'A' },
+      { id: '2', name: 'Склад Подольск', address: 'г. Подольск, ул. Быковская, 15', type: 'B' }
+    ];
+    res.json(warehouses);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Отдаем статику (js, css)
 app.get('/app.js', (req, res) => res.sendFile(path.join(__dirname, 'app.js')));
 app.get('/styles.css', (req, res) => res.sendFile(path.join(__dirname, 'styles.css')));

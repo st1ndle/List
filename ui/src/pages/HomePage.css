@@ -1,0 +1,148 @@
+.home-page .hero {
+  padding-top: 0;
+  min-height: calc(100vh - 68px);
+}
+
+.home-page .hero-title {
+  max-width: 540px;
+}
+
+.home-page .hero-right {
+  background-image: url('../assets/delivery.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.home-page .home-about__paragraph {
+  color: var(--ink2);
+  font-size: 15px;
+  line-height: 1.75;
+  margin-top: 16px;
+}
+
+.home-page .home-about__paragraph--spaced {
+  margin-top: 12px;
+}
+
+.home-page .home-about__button {
+  margin-top: 28px;
+  padding: 12px 28px;
+}
+
+.home-page .home-cta {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.home-page .home-cta__heading .sec-label {
+  color: var(--gold);
+  justify-content: center;
+  display: flex;
+}
+
+.home-page .home-cta__heading .sec-title {
+  color: #fff;
+  margin: 10px 0;
+}
+
+.home-page .home-cta__heading .sec-sub {
+  color: rgba(255, 255, 255, .55);
+  margin-top: 10px;
+  max-width: 100%;
+  width: 100%;
+  text-align: center;
+}
+
+.home-page .home-cta__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+
+.home-page .home-cta__secondary {
+  background: rgba(255, 255, 255, .1);
+  color: #fff;
+  border: 1.5px solid rgba(255, 255, 255, .25);
+  border-radius: 10px;
+  padding: 14px 32px;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.home-page .home-cta__secondary:hover {
+  background: rgba(255, 255, 255, .18);
+}
+
+@media (max-width: 1200px) {
+  .home-page .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .home-page .hero-left,
+  .home-page .hero-right {
+    padding: 56px 28px;
+  }
+
+  .home-page .hero-right {
+    min-height: 460px;
+  }
+}
+
+@media (max-width: 860px) {
+  .home-page .section {
+    padding: 56px 18px;
+  }
+
+  .home-page .hero-left,
+  .home-page .hero-right {
+    padding: 40px 18px;
+  }
+
+  .home-page .hero-badge {
+    top: 18px;
+    right: 18px;
+    width: 74px;
+    height: 74px;
+  }
+
+  .home-page .hero-stats {
+    flex-direction: column;
+    gap: 16px;
+    padding-top: 20px;
+  }
+
+  .home-page .hero-stat {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 0 0 16px;
+  }
+
+  .home-page .hero-stat:last-child {
+    border-bottom: none;
+    padding: 0;
+  }
+
+  .home-page .hero-stat:not(:first-child):not(:last-child),
+  .home-page .hero-stat:last-child {
+    padding-left: 0;
+  }
+
+  .home-page .about-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .home-page .svcs-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-page .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}

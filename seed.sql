@@ -1,8 +1,11 @@
 -- Очищаем таблицы перед наполнением
 -- Порядок важен из-за внешних ключей
+DELETE FROM dbo.order_items;
+DELETE FROM dbo.orders;
 DELETE FROM dbo.products;
 DELETE FROM dbo.categories;
 DELETE FROM dbo.users;
+DELETE FROM dbo.warehouses;
 
 -- ==========================================
 -- 1. НАПОЛНЕНИЕ КАТЕГОРИЙ
@@ -52,3 +55,13 @@ INSERT INTO dbo.products (id, category_id, name, brand, description, price, unit
 INSERT INTO dbo.users (id, first_name, last_name, phone, email, password_hash, role, is_active) VALUES
 ('55555555-5555-5555-5555-555555555555', N'Админ', N'Админов', '79990000000', 'admin@diplom.ru', '$2b$10$bPgekur0qnqZNGKcqXe7ReFLcsdi3A1nAeDpDjo4y1jmPs8gjoQ2.', 'admin', 1),
 ('66666666-6666-6666-6666-666666666666', N'Иван', N'Иванов', '74950000000', 'ivan@diplom.ru', '$2b$10$bPgekur0qnqZNGKcqXe7ReFLcsdi3A1nAeDpDjo4y1jmPs8gjoQ2.', 'user', 1);
+
+-- ==========================================
+-- 4. НАПОЛНЕНИЕ СКЛАДОВ
+-- ==========================================
+INSERT INTO dbo.warehouses (id, name, address, phone, working_hours, is_active) VALUES
+('77777777-7777-7777-7777-777777777701', N'Главный склад — Домодедово', N'территория Триколор, 11', N'+7 (495) 229-40-05', N'Пн–Пт 8:00–18:00', 1),
+('77777777-7777-7777-7777-777777777702', N'Склад — Тула (Щегловская Засека)', N'ул. Щегловская Засека, д. 31А', N'+7 (4872) 25-14-07', NULL, 1),
+('77777777-7777-7777-7777-777777777703', N'Склад — Тула (Луначарского)', N'ул. Луначарского, дом 76', N'+7 (4872) 25-14-07', NULL, 1),
+('77777777-7777-7777-7777-777777777704', N'Склад — Рязань', N'ул. Ряжское шоссе, д. 20', NULL, NULL, 1),
+('77777777-7777-7777-7777-777777777705', N'Склад — Истра', N'д. Покровское, Центральная ул., 27 стр.2', NULL, NULL, 1);

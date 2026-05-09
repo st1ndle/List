@@ -1,8 +1,16 @@
+import { useEffect } from 'react';
 import SectionHeading from '../components/site/SectionHeading';
 import ContactRequestForm from '../components/site/ContactRequestForm';
+import useWarehouseStore from '../store/useWarehouseStore';
 import './ContactsPage.css';
 
 function ContactsPage() {
+  const { warehouses, isLoading, fetchWarehouses } = useWarehouseStore();
+
+  useEffect(() => {
+    fetchWarehouses();
+  }, [fetchWarehouses]);
+
   return (
     <main className="contacts-page">
       <section className="section">
@@ -21,11 +29,18 @@ function ContactsPage() {
             <div className="contact-block">
               <div className="cb-label">Адреса складов</div>
               <div className="loc-list">
-                <div className="loc-item"><div className="loc-name">Главный склад</div><div className="loc-addr">Домодедово, территория Триколор, 11</div></div>
-                <div className="loc-item"><div className="loc-name">Тула (склад 1)</div><div className="loc-addr">ул. Щегловская Засека, д. 31А</div></div>
-                <div className="loc-item"><div className="loc-name">Тула (склад 2)</div><div className="loc-addr">ул. Луначарского, дом 76</div></div>
-                <div className="loc-item"><div className="loc-name">Рязань</div><div className="loc-addr">ул. Ряжское шоссе, д. 20</div></div>
-                <div className="loc-item"><div className="loc-name">Истра</div><div className="loc-addr">д. Покровское, Центральная улица, 27 стр.2</div></div>
+                {isLoading ? (
+                  <div>Загрузка складов...</div>
+                ) : warehouses.length > 0 ? (
+                  warehouses.map(w => (
+                    <div className="loc-item" key={w.id}>
+                      <div className="loc-name">{w.name}</div>
+                      <div className="loc-addr">{w.address}</div>
+                    </div>
+                  ))
+                ) : (
+                  <div>Склады не найдены</div>
+                )}
               </div>
             </div>
           </div>

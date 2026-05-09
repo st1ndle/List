@@ -1,7 +1,15 @@
+import { useEffect } from 'react';
 import SectionHeading from '../components/site/SectionHeading';
+import useWarehouseStore from '../store/useWarehouseStore';
 import './AboutPage.css';
 
 function AboutPage() {
+  const { warehouses, fetchWarehouses } = useWarehouseStore();
+
+  useEffect(() => {
+    fetchWarehouses();
+  }, [fetchWarehouses]);
+
   return (
     <main className="about-page">
       <section className="section">
@@ -45,15 +53,16 @@ function AboutPage() {
             <div className="about-page__warehouses">
               <div className="about-page__warehouses-label">Склады</div>
               <div className="about-page__warehouses-list">
-                📍 Домодедово, территория Триколор, 11
-                <br />
-                📍 Тула, ул. Щегловская Засека, 31А
-                <br />
-                📍 Тула, ул. Луначарского, 76
-                <br />
-                📍 Рязань, ул. Ряжское шоссе, 20
-                <br />
-                📍 Истра, д. Покровское, Центральная, 27с2
+                {warehouses.length > 0 ? (
+                  warehouses.map((w, i) => (
+                    <span key={w.id}>
+                      📍 {w.name}, {w.address}
+                      {i < warehouses.length - 1 && <br />}
+                    </span>
+                  ))
+                ) : (
+                  <span>📍 Загрузка складов...</span>
+                )}
               </div>
             </div>
           </div>

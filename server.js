@@ -160,7 +160,7 @@ app.get('/api/auth/me', async (req, res) => {
     }
     const p = await getPool();
     const result = await p.request()
-      .input('id', sql.NVarChar, req.session.userId)
+      .input('id', sql.UniqueIdentifier, req.session.userId)
       .query('SELECT id, first_name, last_name, phone, email, role FROM users WHERE id = @id');
 
     if (result.recordset.length === 0) {
@@ -213,7 +213,7 @@ app.post('/api/orders', async (req, res) => {
       for (const item of items) {
         await transaction.request()
           .input('orderId', sql.UniqueIdentifier, orderId)
-          .input('productId', sql.VarChar(36), String(item.id))
+          .input('productId', sql.UniqueIdentifier, String(item.id))
           .input('quantity', sql.Int, item.quantity)
           .input('priceAtPurchase', sql.Decimal(10, 2), item.price_at_purchase)
           .query(`
@@ -315,7 +315,7 @@ app.get('/products', async (req, res) => {
 
     if (categoryId) {
       result = await p.request()
-        .input('categoryId', sql.VarChar, categoryId)
+        .input('categoryId', sql.UniqueIdentifier, categoryId)
         .query('SELECT * FROM products WHERE category_id = @categoryId ORDER BY name');
     } else {
       result = await p.request()
@@ -401,12 +401,9 @@ app.post('/api/categories/lowest-prices', async (req, res) => {
 
 app.get('/api/warehouses', async (req, res) => {
   try {
-    // Временно возвращаем заглушку
-    const warehouses = [
-      { id: '1', name: 'Склад Домодедово (Основной)', address: 'г. Домодедово, ул. Логистическая, 1/6', type: 'A' },
-      { id: '2', name: 'Склад Подольск', address: 'г. Подольск, ул. Быковская, 15', type: 'B' }
-    ];
-    res.json(warehouses);
+    const p = await getPool();
+    const result = await p.request().query('SELECT * FROM warehouses WHERE is_active = 1 ORDER BY name');
+    res.json(result.recordset);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

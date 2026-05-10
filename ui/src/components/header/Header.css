@@ -87,10 +87,21 @@
   .nav-links {
     gap: 16px;
   }
+
+  .nav-phone {
+    display: none;
+  }
 }
 
 @media (max-width: 1080px) {
+  /* TODO: Скрыть ссылки, когда появится burger-menu */
   .nav-links {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .nav-tagline {
     display: none;
   }
 }
@@ -108,7 +119,8 @@
     justify-content: flex-end;
   }
 
-  .nav-phone {
+  .nav-logo {
     display: none;
   }
 }
+

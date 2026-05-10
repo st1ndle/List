@@ -7,6 +7,7 @@ function HeaderActions({
   isAuthenticated,
   onCartClick,
   onOrdersClick,
+  onProfileClick,
   onLoginClick,
   onLogoutClick,
 }) {
@@ -24,8 +25,8 @@ function HeaderActions({
       </IconButton>
       {isAuthenticated ? (
         <>
-          <Button variant="ghost" size="sm" onClick={onOrdersClick}>
-            Мои заказы
+          <Button variant="ghost" size="sm" onClick={onProfileClick}>
+            Профиль
           </Button>
           <Button variant="ghost" size="sm" onClick={onLogoutClick}>
             Выйти
@@ -45,7 +46,7 @@ HeaderActions.propTypes = {
   cartCount: PropTypes.number.isRequired,
   isAuthenticated: PropTypes.bool.isRequired,
   onCartClick: PropTypes.func.isRequired,
-  onOrdersClick: PropTypes.func.isRequired,
+  onProfileClick: PropTypes.func.isRequired,
   onLoginClick: PropTypes.func.isRequired,
   onLogoutClick: PropTypes.func.isRequired,
 };

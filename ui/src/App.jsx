@@ -11,6 +11,7 @@ import CheckoutPage from './pages/CheckoutPage';
 import OrdersPage from './pages/OrdersPage';
 import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
+import AdminPage from './pages/AdminPage';
 import './App.css';
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/adminpage" element={<AdminPage />} />
       </Routes>
     </main>
   );

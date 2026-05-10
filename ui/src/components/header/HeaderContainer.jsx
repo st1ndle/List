@@ -1,14 +1,20 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Header from './Header';
 import useCartStore from '../../store/useCartStore';
+import ApiStorage from '../../api/ApiStorage';
 
 function HeaderContainer() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const cartItems = useCartStore((state) => state.items);
-  const cartCount = Object.values(cartItems).reduce((a, b) => a + b, 0);
+  const cartCount = useCartStore((state) => state.getCartItemsCount());
+
+  useEffect(() => {
+    ApiStorage.auth.me()
+      .then(() => setIsAuthenticated(true))
+      .catch(() => setIsAuthenticated(false));
+  }, [location.pathname]);
 
   const navigationItems = useMemo(
     () => [
@@ -35,14 +41,18 @@ function HeaderContainer() {
       isAuthenticated={isAuthenticated}
       onNavigate={navigate}
       onCartClick={() => navigate('/cart')}
-      onOrdersClick={() => navigate('/orders')}
+      onProfileClick={() => navigate('/profile')}
       onLoginClick={() => {
-        setIsAuthenticated(true);
         navigate('/auth');
       }}
-      onLogoutClick={() => {
-        setIsAuthenticated(false);
-        navigate('/');
+      onLogoutClick={async () => {
+        try {
+          await ApiStorage.auth.logout();
+          setIsAuthenticated(false);
+          navigate('/');
+        } catch (error) {
+          console.error('Ошибка при выходе:', error);
+        }
       }}
     />
   );

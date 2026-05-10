@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { Button } from '../ui/Button';
+import { InputField, FormRow } from '../ui/Form';
 
 function ProfileDataForm({ user, onSave }) {
   const handleSubmit = (e) => {
@@ -15,26 +16,14 @@ function ProfileDataForm({ user, onSave }) {
     <form className="scard" onSubmit={handleSubmit}>
       <div className="scard-title" style={{ marginBottom: '24px' }}>Личные данные</div>
       
-      <div className="frow">
-        <div className="fg">
-          <label className="flbl">Имя</label>
-          <input className="finp" defaultValue={user.name} placeholder="Иван" />
-        </div>
-        <div className="fg">
-          <label className="flbl">Фамилия</label>
-          <input className="finp" defaultValue={user.lastname} placeholder="Иванов" />
-        </div>
-      </div>
+      <FormRow>
+        <InputField label="Имя" defaultValue={user.name} placeholder="Иван" />
+        <InputField label="Фамилия" defaultValue={user.lastname} placeholder="Иванов" />
+      </FormRow>
       
-      <div className="fg">
-        <label className="flbl">Телефон</label>
-        <input className="finp" defaultValue={user.phone} placeholder="+7 (___) ___-__-__" />
-      </div>
+      <InputField label="Телефон" defaultValue={user.phone} placeholder="+7 (___) ___-__-__" />
       
-      <div className="fg">
-        <label className="flbl">Почта</label>
-        <input className="finp" defaultValue={user.email} placeholder="name@company.ru" />
-      </div>
+      <InputField label="Почта" defaultValue={user.email} placeholder="name@company.ru" />
       
       <Button variant="solid" type="submit" style={{ padding: '12px 24px', fontSize: '14px', borderRadius: '10px' }}>
         Сохранить изменения

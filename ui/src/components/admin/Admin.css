@@ -1,0 +1,117 @@
+/* /src/components/admin/Admin.css */
+
+.admin-section {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.admin-section h3 {
+  font-family: 'Geologica', sans-serif;
+  font-size: 24px;
+  margin-top: 0;
+  margin-bottom: 24px;
+  color: #333;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid #eeeeee;
+  font-family: 'Geologica', sans-serif;
+}
+
+.admin-table th {
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+
+.admin-table tr:hover td {
+  background-color: #fafafa;
+}
+
+.admin-select {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  background-color: #fff;
+  cursor: pointer;
+  outline: none;
+}
+
+.admin-select:focus {
+  border-color: var(--color-accent, #ff5722);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-badge.active {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-badge.inactive {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.admin-empty {
+  text-align: center;
+  padding: 40px;
+  color: #888;
+}
+
+.admin-search-form {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.admin-search-input {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.admin-search-input:focus {
+  border-color: var(--color-accent, #ff5722);
+}
+
+.admin-search-button {
+  padding: 10px 24px;
+  background-color: var(--color-accent, #ff5722);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.admin-search-button:hover {
+  background-color: #e64a19;
+}

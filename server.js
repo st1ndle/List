@@ -41,6 +41,25 @@ async function getPool() {
   return pool;
 }
 
+// Middleware: только для авторизованных администраторов
+async function requireAdmin(req, res, next) {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    const p = await getPool();
+    const result = await p.request()
+      .input('id', sql.UniqueIdentifier, req.session.userId)
+      .query('SELECT role FROM users WHERE id = @id');
+    if (result.recordset.length === 0 || result.recordset[0].role !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden: admin only' });
+    }
+    next();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 app.use(session({
   store: new MSSQLStore(dbConfig),
   secret: process.env.SESSION_SECRET || 'diplom-super-secret-key-2026',
@@ -176,7 +195,7 @@ app.get('/api/auth/me', async (req, res) => {
 
 app.post('/api/orders', async (req, res) => {
   if (!req.session.userId) return res.status(401).json({ error: 'Unauthorized' });
-  const { items, total_amount, delivery_address, comment, customer_name, customer_phone } = req.body;
+  const { items, total_amount, delivery_address, comment, customer_name, customer_phone, warehouse_code } = req.body;
   if (!items || !items.length) return res.status(400).json({ error: 'Empty cart' });
 
   try {
@@ -190,32 +209,45 @@ app.post('/api/orders', async (req, res) => {
         .query('SELECT first_name, last_name, phone FROM users WHERE id = @userId');
       if (userRes.recordset.length === 0) throw new Error('User not found');
       const user = userRes.recordset[0];
-      
+
       const final_customer_name = customer_name || `${user.first_name} ${user.last_name || ''}`.trim();
       const final_customer_phone = customer_phone || user.phone || '';
 
+      // Если передан warehouse_code — проверяем, что такой склад существует
+      let finalWarehouseCode = null;
+      if (warehouse_code) {
+        const whRes = await transaction.request()
+          .input('wcode', sql.NVarChar, warehouse_code)
+          .query('SELECT warehouse_code FROM warehouses WHERE warehouse_code = @wcode AND is_active = 1');
+        if (whRes.recordset.length > 0) {
+          finalWarehouseCode = whRes.recordset[0].warehouse_code;
+        }
+      }
+
       const orderRes = await transaction.request()
-        .input('userId', sql.UniqueIdentifier, req.session.userId)
-        .input('totalAmount', sql.Decimal(10, 2), total_amount)
-        .input('customerName', sql.NVarChar, final_customer_name)
-        .input('customerPhone', sql.NVarChar, final_customer_phone)
-        .input('deliveryAddress', sql.NVarChar, delivery_address || null)
-        .input('comment', sql.NVarChar, comment || null)
+        .input('userId',        sql.UniqueIdentifier,   req.session.userId)
+        .input('warehouseCode', sql.NVarChar,            finalWarehouseCode)
+        .input('totalAmount',   sql.Decimal(10, 2),     total_amount)
+        .input('customerName',  sql.NVarChar,            final_customer_name)
+        .input('customerPhone', sql.NVarChar,            final_customer_phone)
+        .input('deliveryAddress', sql.NVarChar,          delivery_address || null)
+        .input('comment',       sql.NVarChar,            comment || null)
         .query(`
-          INSERT INTO orders (user_id, status, total_amount, customer_name, customer_phone, delivery_address, comment)
-          OUTPUT INSERTED.id, INSERTED.order_number
-          VALUES (@userId, 'new', @totalAmount, @customerName, @customerPhone, @deliveryAddress, @comment)
+          INSERT INTO orders (user_id, warehouse_code, status, total_amount, customer_name, customer_phone, delivery_address, comment)
+          OUTPUT INSERTED.id, INSERTED.order_number, INSERTED.public_id
+          VALUES (@userId, @warehouseCode, 'new', @totalAmount, @customerName, @customerPhone, @deliveryAddress, @comment)
         `);
 
-      const orderId = orderRes.recordset[0].id;
+      const orderId     = orderRes.recordset[0].id;
       const orderNumber = orderRes.recordset[0].order_number;
+      const publicId    = orderRes.recordset[0].public_id;
 
       for (const item of items) {
         await transaction.request()
-          .input('orderId', sql.UniqueIdentifier, orderId)
-          .input('productId', sql.UniqueIdentifier, String(item.id))
-          .input('quantity', sql.Int, item.quantity)
-          .input('priceAtPurchase', sql.Decimal(10, 2), item.price_at_purchase)
+          .input('orderId',          sql.UniqueIdentifier, orderId)
+          .input('productId',        sql.UniqueIdentifier, String(item.id))
+          .input('quantity',         sql.Int,              item.quantity)
+          .input('priceAtPurchase',  sql.Decimal(10, 2),   item.price_at_purchase)
           .query(`
             INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase)
             VALUES (@orderId, @productId, @quantity, @priceAtPurchase)
@@ -223,7 +255,7 @@ app.post('/api/orders', async (req, res) => {
       }
 
       await transaction.commit();
-      res.json({ status: 'ok', order_id: orderId, order_number: orderNumber });
+      res.json({ status: 'ok', order_id: orderId, order_number: orderNumber, public_id: publicId });
     } catch (err) {
       await transaction.rollback();
       throw err;
@@ -233,6 +265,7 @@ app.post('/api/orders', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
 
 app.get('/api/orders', async (req, res) => {
   if (!req.session.userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -402,10 +435,246 @@ app.post('/api/categories/lowest-prices', async (req, res) => {
 app.get('/api/warehouses', async (req, res) => {
   try {
     const p = await getPool();
-    const result = await p.request().query('SELECT * FROM warehouses WHERE is_active = 1 ORDER BY name');
+    const result = await p.request().query(`
+      SELECT
+        id, warehouse_code, name, city, address, phone,
+        CONVERT(VARCHAR(5), working_hours_start, 108) AS working_hours_start,
+        CONVERT(VARCHAR(5), working_hours_end, 108) AS working_hours_end,
+        is_active
+      FROM warehouses
+      WHERE is_active = 1
+      ORDER BY city, name
+    `);
     res.json(result.recordset);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// -------------------------------------------------------
+// ADMIN: Поиск и управление заказами
+// -------------------------------------------------------
+
+/**
+ * GET /api/admin/orders
+ * Список заказов с курсорной пагинацией и поиском.
+ *
+ * Query params:
+ *   search  — поиск по public_id / customer_name / customer_phone / email пользователя
+ *   cursor  — order_number последнего полученного заказа (для следующей страницы)
+ *   limit   — размер страницы (по умолчанию 20, максимум 100)
+ *   status  — фильтр по статусу (new / processing / completed / cancelled)
+ *
+ * Возвращает:
+ *   { data: [...], nextCursor: <order_number | null> }
+ */
+app.get('/api/admin/orders', requireAdmin, async (req, res) => {
+  try {
+    const p = await getPool();
+    const limit  = Math.min(parseInt(req.query.limit  || '20', 10), 100);
+    const cursor = req.query.cursor ? parseInt(req.query.cursor, 10) : null;
+    const search = (req.query.search || '').trim();
+    const status = req.query.status || null;
+
+    const request = p.request();
+    request.input('limit', sql.Int, limit + 1); // берём на 1 больше, чтобы знать, есть ли следующая страница
+
+    let whereClauses = [];
+
+    // Курсор: следующая страница — заказы с order_number < cursor
+    if (cursor !== null) {
+      request.input('cursor', sql.Int, cursor);
+      whereClauses.push('o.order_number < @cursor');
+    }
+
+    // Фильтр по статусу
+    if (status) {
+      request.input('status', sql.NVarChar, status);
+      whereClauses.push('o.status = @status');
+    }
+
+    // Поиск: public_id / ФИО / телефон / email пользователя
+    if (search) {
+      request.input('search', sql.NVarChar, `%${search}%`);
+      request.input('searchExact', sql.NVarChar, search);
+      whereClauses.push(`(
+        o.public_id        LIKE @search
+        OR o.customer_name LIKE @search
+        OR o.customer_phone LIKE @search
+        OR u.email         LIKE @search
+        OR u.first_name + ' ' + ISNULL(u.last_name, '') LIKE @search
+        OR CAST(o.order_number AS NVARCHAR) = @searchExact
+      )`);
+    }
+
+    const whereSQL = whereClauses.length > 0 ? 'WHERE ' + whereClauses.join(' AND ') : '';
+
+    const query = `
+      SELECT TOP (@limit)
+        o.id, o.order_number, o.public_id, o.status,
+        o.total_amount, o.customer_name, o.customer_phone,
+        o.delivery_address, o.comment, o.created_at, o.updated_at,
+        u.email AS user_email,
+        u.first_name AS user_first_name,
+        u.last_name  AS user_last_name
+      FROM orders o
+      LEFT JOIN users u ON o.user_id = u.id
+      ${whereSQL}
+      ORDER BY o.order_number DESC
+    `;
+
+    const result = await request.query(query);
+    const rows = result.recordset;
+
+    // Если получили limit+1 строк — есть следующая страница
+    const hasMore = rows.length > limit;
+    if (hasMore) rows.pop();
+
+    const nextCursor = hasMore ? rows[rows.length - 1].order_number : null;
+
+    res.json({ data: rows, nextCursor });
+  } catch (err) {
+    console.error('Admin orders fetch error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * PATCH /api/admin/orders/:id/status
+ * Смена статуса заказа администратором.
+ * Body: { status: 'new' | 'processing' | 'completed' | 'cancelled' }
+ */
+app.patch('/api/admin/orders/:id/status', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const allowed = ['new', 'processing', 'completed', 'cancelled'];
+  if (!status || !allowed.includes(status)) {
+    return res.status(400).json({ error: `Недопустимый статус. Допустимые: ${allowed.join(', ')}` });
+  }
+  try {
+    const p = await getPool();
+    const result = await p.request()
+      .input('id',     sql.UniqueIdentifier, id)
+      .input('status', sql.NVarChar, status)
+      .query(`
+        UPDATE orders
+        SET status = @status, updated_at = SYSUTCDATETIME()
+        OUTPUT INSERTED.id, INSERTED.order_number, INSERTED.public_id, INSERTED.status, INSERTED.updated_at
+        WHERE id = @id
+      `);
+    if (result.recordset.length === 0) return res.status(404).json({ error: 'Заказ не найден' });
+    res.json({ status: 'ok', order: result.recordset[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -------------------------------------------------------
+// ADMIN: Управление складами
+// -------------------------------------------------------
+
+// Список всех складов (включая неактивные)
+app.get('/api/admin/warehouses', requireAdmin, async (req, res) => {
+  try {
+    const p = await getPool();
+    const result = await p.request().query(`
+      SELECT id, warehouse_code, name, city, address, phone,
+             CONVERT(VARCHAR(5), working_hours_start, 108) AS working_hours_start,
+             CONVERT(VARCHAR(5), working_hours_end, 108) AS working_hours_end,
+             is_active, created_at, updated_at
+      FROM warehouses
+      ORDER BY city, name
+    `);
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Создание склада
+app.post('/api/admin/warehouses', requireAdmin, async (req, res) => {
+  const { warehouse_code, name, city, address, phone, working_hours_start, working_hours_end, is_active } = req.body;
+  if (!warehouse_code || !name || !city || !address) {
+    return res.status(400).json({ error: 'Обязательные поля: warehouse_code, name, city, address' });
+  }
+  try {
+    const p = await getPool();
+    const result = await p.request()
+      .input('code',   sql.NVarChar,  warehouse_code.toUpperCase().slice(0, 10))
+      .input('name',   sql.NVarChar,  name)
+      .input('city',   sql.NVarChar,  city)
+      .input('addr',   sql.NVarChar,  address)
+      .input('phone',  sql.NVarChar,  phone || null)
+      .input('start',  sql.Time,      working_hours_start || null)
+      .input('end',    sql.Time,      working_hours_end   || null)
+      .input('active', sql.Bit,       is_active !== undefined ? (is_active ? 1 : 0) : 1)
+      .query(`
+        INSERT INTO warehouses (warehouse_code, name, city, address, phone, working_hours_start, working_hours_end, is_active)
+        OUTPUT INSERTED.*
+        VALUES (@code, @name, @city, @addr, @phone, @start, @end, @active)
+      `);
+    res.status(201).json(result.recordset[0]);
+  } catch (err) {
+    if (err.number === 2627) {
+      return res.status(409).json({ error: 'Склад с таким warehouse_code уже существует' });
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Обновление склада
+app.put('/api/admin/warehouses/:id', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { warehouse_code, name, city, address, phone, working_hours_start, working_hours_end, is_active } = req.body;
+  if (!warehouse_code || !name || !city || !address) {
+    return res.status(400).json({ error: 'Обязательные поля: warehouse_code, name, city, address' });
+  }
+  try {
+    const p = await getPool();
+    const result = await p.request()
+      .input('id',     sql.UniqueIdentifier, id)
+      .input('code',   sql.NVarChar,  warehouse_code.toUpperCase().slice(0, 10))
+      .input('name',   sql.NVarChar,  name)
+      .input('city',   sql.NVarChar,  city)
+      .input('addr',   sql.NVarChar,  address)
+      .input('phone',  sql.NVarChar,  phone || null)
+      .input('start',  sql.Time,      working_hours_start || null)
+      .input('end',    sql.Time,      working_hours_end   || null)
+      .input('active', sql.Bit,       is_active !== undefined ? (is_active ? 1 : 0) : 1)
+      .query(`
+        UPDATE warehouses
+        SET warehouse_code = @code, name = @name, city = @city, address = @addr,
+            phone = @phone, working_hours_start = @start, working_hours_end = @end,
+            is_active = @active, updated_at = SYSUTCDATETIME()
+        OUTPUT INSERTED.*
+        WHERE id = @id
+      `);
+    if (result.recordset.length === 0) return res.status(404).json({ error: 'Склад не найден' });
+    res.json(result.recordset[0]);
+  } catch (err) {
+    if (err.number === 2627) {
+      return res.status(409).json({ error: 'Склад с таким warehouse_code уже существует' });
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Удаление склада (мягкое — деактивация)
+app.delete('/api/admin/warehouses/:id', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const p = await getPool();
+    const result = await p.request()
+      .input('id', sql.UniqueIdentifier, id)
+      .query(`
+        UPDATE warehouses SET is_active = 0, updated_at = SYSUTCDATETIME()
+        OUTPUT INSERTED.id
+        WHERE id = @id
+      `);
+    if (result.recordset.length === 0) return res.status(404).json({ error: 'Склад не найден' });
+    res.json({ status: 'ok', id: result.recordset[0].id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

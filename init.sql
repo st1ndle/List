@@ -68,27 +68,42 @@ BEGIN
 END
 
 -- Таблица складов
-IF OBJECT_ID('dbo.warehouses', 'U') IS NULL
-BEGIN
-    CREATE TABLE warehouses (
-        id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-        name NVARCHAR(255) NOT NULL,
-        address NVARCHAR(255) NOT NULL,
-        phone NVARCHAR(50),
-        working_hours NVARCHAR(100),
-        is_active BIT DEFAULT 1,
-        created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
-        updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
-    );
-    CREATE INDEX IX_Warehouses_IsActive ON warehouses(is_active);
-END
+IF OBJECT_ID('dbo.warehouses', 'U') IS NOT NULL DROP TABLE warehouses;
+
+CREATE TABLE warehouses (
+    id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    -- Код склада (4 символа, используется в публичном ID заказа, напр. UF32)
+    warehouse_code NVARCHAR(10) NOT NULL UNIQUE,
+    name NVARCHAR(255) NOT NULL,
+    city NVARCHAR(100) NOT NULL,
+    address NVARCHAR(255) NOT NULL,
+    phone NVARCHAR(50),
+    -- Время работы: два отдельных поля типа TIME (без даты)
+    working_hours_start TIME,
+    working_hours_end   TIME,
+    is_active BIT DEFAULT 1,
+    created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+    updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
+);
+CREATE INDEX IX_Warehouses_IsActive ON warehouses(is_active);
 
 -- Таблица заказов
 IF OBJECT_ID('dbo.orders', 'U') IS NULL
 BEGIN
     CREATE TABLE orders (
         id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+        -- Автоинкрементный порядковый номер (1000, 1001, ...)
         order_number INT IDENTITY(1000, 1) UNIQUE NOT NULL,
+        -- Публичный ID для отображения клиенту, напр. UF32-00001000
+        -- Вычисляемое поле заполняется триггером или приложением после INSERT
+        public_id AS (
+            CASE
+                WHEN warehouse_code IS NOT NULL
+                THEN warehouse_code + N'-' + RIGHT(N'00000000' + CAST(order_number AS NVARCHAR(8)), 8)
+                ELSE N'ORD-' + RIGHT(N'00000000' + CAST(order_number AS NVARCHAR(8)), 8)
+            END
+        ) PERSISTED,
+        warehouse_code NVARCHAR(10) NULL,
         user_id UNIQUEIDENTIFIER NULL,
         status NVARCHAR(50) NOT NULL DEFAULT 'new',
         total_amount DECIMAL(10, 2) NOT NULL,
@@ -104,6 +119,9 @@ BEGIN
     );
     CREATE INDEX IX_Orders_UserId ON orders(user_id);
     CREATE INDEX IX_Orders_OrderNumber ON orders(order_number);
+    CREATE INDEX IX_Orders_Status ON orders(status);
+    CREATE INDEX IX_Orders_CreatedAt ON orders(created_at);
+    CREATE INDEX IX_Orders_CustomerPhone ON orders(customer_phone);
 END
 
 -- Таблица позиций заказа

@@ -13,7 +13,7 @@ function Header({
   isAuthenticated,
   onNavigate,
   onCartClick,
-  onOrdersClick,
+  onProfileClick,
   onLoginClick,
   onLogoutClick,
 }) {
@@ -31,7 +31,7 @@ function Header({
           cartCount={cartCount}
           isAuthenticated={isAuthenticated}
           onCartClick={onCartClick}
-          onOrdersClick={onOrdersClick}
+          onProfileClick={onProfileClick}
           onLoginClick={onLoginClick}
           onLogoutClick={onLogoutClick}
         />
@@ -57,7 +57,7 @@ Header.propTypes = {
   isAuthenticated: PropTypes.bool.isRequired,
   onNavigate: PropTypes.func.isRequired,
   onCartClick: PropTypes.func.isRequired,
-  onOrdersClick: PropTypes.func.isRequired,
+  onProfileClick: PropTypes.func.isRequired,
   onLoginClick: PropTypes.func.isRequired,
   onLogoutClick: PropTypes.func.isRequired,
 };

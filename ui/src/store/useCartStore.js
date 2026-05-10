@@ -40,7 +40,7 @@ const useCartStore = create(
 
       getCartItemsCount: () => {
         const state = get();
-        return Object.values(state.items).reduce((a, b) => a + b, 0);
+        return Object.keys(state.items).length;
       },
     }),
     {

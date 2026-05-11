@@ -32,7 +32,9 @@ router.get('/', async (req, res) => {
     const p      = await getPool();
     const result = await p.request().query(`
       SELECT id, warehouse_code, name, city, address, phone,
-             working_hours_start, working_hours_end, is_active
+             CONVERT(varchar(5), working_hours_start, 108) as working_hours_start,
+             CONVERT(varchar(5), working_hours_end, 108) as working_hours_end,
+             is_active
       FROM warehouses
       WHERE is_active = 1         -- Только активные склады
       ORDER BY city, name         -- Сортировка по городу, затем по имени

@@ -12,7 +12,7 @@ function HeaderContainer() {
 
   useEffect(() => {
     ApiStorage.auth.me()
-      .then(() => setIsAuthenticated(true))
+      .then((data) => setIsAuthenticated(!!data?.user))
       .catch(() => setIsAuthenticated(false));
   }, [location.pathname]);
 

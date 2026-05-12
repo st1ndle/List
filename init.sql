@@ -48,7 +48,7 @@ CREATE TABLE dbo.products (
     updated_at DATETIME2(0) NOT NULL CONSTRAINT DF_Products_UpdatedAt DEFAULT SYSUTCDATETIME(),
 
     CONSTRAINT PK_Products PRIMARY KEY CLUSTERED (id),
-    CONSTRAINT FK_Products_Categories FOREIGN KEY (category_id, category_slug)
+    CONSTRAINT products_categories_fk FOREIGN KEY (category_id, category_slug)
         REFERENCES dbo.categories(id, slug)
         ON UPDATE NO ACTION
         ON DELETE NO ACTION,
@@ -114,7 +114,7 @@ CREATE TABLE dbo.orders (
 
     CONSTRAINT PK_Orders PRIMARY KEY CLUSTERED (id),
     CONSTRAINT UQ_Orders_OrderNumber UNIQUE (order_number),
-    CONSTRAINT FK_Orders_Users FOREIGN KEY (user_id)
+    CONSTRAINT orders_users_fk FOREIGN KEY (user_id)
         REFERENCES dbo.users(id)
         ON UPDATE NO ACTION
         ON DELETE SET NULL,
@@ -136,11 +136,11 @@ CREATE TABLE dbo.order_items (
     created_at DATETIME2(0) NOT NULL CONSTRAINT DF_OrderItems_CreatedAt DEFAULT SYSUTCDATETIME(),
 
     CONSTRAINT PK_OrderItems PRIMARY KEY CLUSTERED (id),
-    CONSTRAINT FK_OrderItems_Orders FOREIGN KEY (order_id)
+    CONSTRAINT order_items_orders_fk FOREIGN KEY (order_id)
         REFERENCES dbo.orders(id)
         ON UPDATE NO ACTION
         ON DELETE CASCADE,
-    CONSTRAINT FK_OrderItems_Products FOREIGN KEY (product_id)
+    CONSTRAINT order_items_products_fk FOREIGN KEY (product_id)
         REFERENCES dbo.products(id)
         ON UPDATE NO ACTION
         ON DELETE NO ACTION,

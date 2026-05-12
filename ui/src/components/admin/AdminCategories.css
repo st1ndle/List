@@ -42,9 +42,10 @@
 }
 
 .category-color {
+  display: inline-block;
   width: 24px;
   height: 24px;
-  border-radius: 50%;
+  border-radius: 6px;
   border: 1px solid #cbd5e1;
 }
 
@@ -79,4 +80,10 @@
   padding: 0;
   border: none;
   cursor: pointer;
+}
+
+/* Overrides for new UI components in filters */
+.admin-categories-filters .ui-input-group {
+  margin-bottom: 0;
+  max-width: 300px;
 }

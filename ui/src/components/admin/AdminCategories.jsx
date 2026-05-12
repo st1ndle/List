@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import ApiStorage from '../../api/ApiStorage';
 import useToastStore from '../../store/useToastStore';
+import { Input } from '../ui/Input';
+import { Button, IconButton } from '../ui/Button';
+import { ColorPicker } from '../ui/ColorPicker';
+import { Checkbox } from '../ui/Checkbox';
 import './AdminCategories.css';
 
 export default function AdminCategories() {
@@ -69,39 +73,58 @@ export default function AdminCategories() {
     <div className="admin-categories">
       <div className="admin-categories-header">
         <h2>Категории</h2>
-        <button className="btn-primary" onClick={handleCreate}>+ Добавить</button>
+        <Button onClick={handleCreate} primary>+ Добавить</Button>
       </div>
 
       <div className="admin-categories-filters">
-        <input 
-          type="text" 
-          placeholder="🔍 Поиск по названию..." 
-          value={search} 
+        <Input
+          type="text"
+          placeholder="🔍 Поиск по названию..."
+          value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="admin-input search-input"
         />
       </div>
 
       {loading ? (
         <div className="loading">Загрузка...</div>
       ) : (
-        <div className="admin-categories-list">
-          {categories.map(c => (
-            <div key={c.id} className="admin-category-card">
-              <div className="category-info">
-                <span className="category-color" style={{ backgroundColor: c.color_hex }}></span>
-                <strong>{c.name}</strong>
-                <span className="category-slug">{c.slug}</span>
-                <span className="category-order">Order: {c.sort_order}</span>
-                {!c.is_active && <span className="badge-inactive">Неактивна</span>}
-              </div>
-              <div className="category-actions">
-                <button className="btn-icon" onClick={() => handleEdit(c)}>✏️</button>
-                <button className="btn-icon btn-danger" onClick={() => handleDelete(c.id)}>🗑️</button>
-              </div>
-            </div>
-          ))}
-          {categories.length === 0 && <div className="empty-state">Категории не найдены</div>}
+        <div className="table-responsive">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Цвет</th>
+                <th>Название</th>
+                <th>Системное имя (Slug)</th>
+                <th>Порядок</th>
+                <th>Статус</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {categories.map(c => (
+                <tr key={c.id}>
+                  <td>
+                    <span className="category-color" style={{ backgroundColor: c.color_hex }}></span>
+                  </td>
+                  <td>{c.name}</td>
+                  <td>{c.slug}</td>
+                  <td>{c.sort_order}</td>
+                  <td>{c.is_active ? '✅' : '❌'}</td>
+                  <td>
+                    <div className="table-actions">
+                      <IconButton variant="neutral" ariaLabel="Редактировать" onClick={() => handleEdit(c)}>✏️</IconButton>
+                      <IconButton variant="danger" ariaLabel="Удалить" onClick={() => handleDelete(c.id)}>🗑️</IconButton>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {categories.length === 0 && (
+                <tr>
+                  <td colSpan="6" className="text-center py-4">Категории не найдены</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -109,68 +132,46 @@ export default function AdminCategories() {
         <div className="admin-modal-overlay">
           <div className="admin-modal">
             <h3>{editingCategory.id ? 'Редактировать категорию' : 'Новая категория'}</h3>
-            <form onSubmit={handleSave} className="admin-form">
-              <div className="form-group">
-                <label>Название (name):</label>
-                <input 
-                  required 
-                  type="text" 
-                  value={editingCategory.name} 
-                  onChange={e => setEditingCategory({...editingCategory, name: e.target.value})}
-                  className="admin-input"
-                />
-              </div>
-              <div className="form-group">
-                <label>Слаг (slug):</label>
-                <input 
-                  required 
-                  type="text" 
-                  value={editingCategory.slug} 
-                  onChange={e => setEditingCategory({...editingCategory, slug: e.target.value})}
-                  className="admin-input"
-                />
-              </div>
-              <div className="form-group">
-                <label>Цвет (color_hex):</label>
-                <div className="color-input-wrapper">
-                  <input 
-                    required 
-                    type="color" 
-                    value={editingCategory.color_hex} 
-                    onChange={e => setEditingCategory({...editingCategory, color_hex: e.target.value})}
-                    className="admin-color-picker"
-                  />
-                  <input 
-                    type="text" 
-                    value={editingCategory.color_hex} 
-                    onChange={e => setEditingCategory({...editingCategory, color_hex: e.target.value})}
-                    className="admin-input"
-                  />
-                </div>
-              </div>
-              <div className="form-group">
-                <label>Порядок (sort_order):</label>
-                <input 
-                  required 
-                  type="number" 
-                  value={editingCategory.sort_order} 
-                  onChange={e => setEditingCategory({...editingCategory, sort_order: Number(e.target.value)})}
-                  className="admin-input"
-                />
-              </div>
-              <div className="form-group-checkbox">
-                <label>
-                  <input 
-                    type="checkbox" 
-                    checked={editingCategory.is_active} 
-                    onChange={e => setEditingCategory({...editingCategory, is_active: e.target.checked})}
-                  />
-                  Активна (is_active)
-                </label>
-              </div>
+            <form onSubmit={handleSave} className="admin-modal-form">
+              <Input
+                label="Название:"
+                required
+                type="text"
+                value={editingCategory.name}
+                onChange={e => setEditingCategory({ ...editingCategory, name: e.target.value })}
+              />
+
+              <Input
+                label="Системное имя:"
+                required
+                type="text"
+                value={editingCategory.slug}
+                onChange={e => setEditingCategory({ ...editingCategory, slug: e.target.value })}
+              />
+
+              <ColorPicker
+                label="Цвет:"
+                value={editingCategory.color_hex || '#000000'}
+                onChange={e => setEditingCategory({ ...editingCategory, color_hex: e.target.value })}
+              />
+
+              <Input
+                label="Порядок:"
+                required
+                type="number"
+                value={editingCategory.sort_order}
+                onChange={e => setEditingCategory({ ...editingCategory, sort_order: Number(e.target.value) })}
+              />
+
+              <Checkbox
+                label="Активна"
+                checked={editingCategory.is_active}
+                onChange={e => setEditingCategory({ ...editingCategory, is_active: e.target.checked })}
+              />
+
               <div className="admin-modal-actions">
-                <button type="button" className="btn-secondary" onClick={() => setIsModalOpen(false)}>Отмена</button>
-                <button type="submit" className="btn-primary">Сохранить</button>
+                <Button variant="outline" onClick={() => setIsModalOpen(false)}>Отмена</Button>
+                <Button type="submit" primary>Сохранить</Button>
               </div>
             </form>
           </div>

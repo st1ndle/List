@@ -155,6 +155,28 @@ class AdminWarehouses extends Component {
                 </div>
 
                 <div className="admin-modal-field">
+                  <label>Время начала работы</label>
+                  <input 
+                    className="admin-modal-input"
+                    type="time"
+                    name="working_hours_start" 
+                    value={editFormData.working_hours_start || ''} 
+                    onChange={this.handleFormChange} 
+                  />
+                </div>
+
+                <div className="admin-modal-field">
+                  <label>Время окончания работы</label>
+                  <input 
+                    className="admin-modal-input"
+                    type="time"
+                    name="working_hours_end" 
+                    value={editFormData.working_hours_end || ''} 
+                    onChange={this.handleFormChange} 
+                  />
+                </div>
+
+                <div className="admin-modal-field">
                   <label className="admin-modal-checkbox">
                     <input 
                       type="checkbox" 

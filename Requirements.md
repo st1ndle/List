@@ -48,6 +48,6 @@
 ---
 
 ## 4. Стек технологий (предлагаемый)
-* **Frontend:** React.js / Flutter (для мобильного приложения).
-* **Backend:** Node.js (Express) или Python (Django).
-* **БД:** PostgreSQL.
+* **Frontend:** React.js / Kotlin (для мобильного приложения).
+* **Backend:** Node.js (Express).
+* **БД:** MSSQL.

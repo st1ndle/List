@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ApiStorage from '../api/ApiStorage';
+import useToastStore from '../store/useToastStore';
 
 // --- Подкомпонент: Личные данные ---
 const ProfileData = ({ user }) => {
@@ -18,8 +19,7 @@ const ProfileData = ({ user }) => {
   const handleSave = async (e) => {
     e.preventDefault();
     // TODO: Здесь можно добавить ApiStorage.auth.updateProfile(formData)
-    // showToast('✓', 'Данные сохранены');
-    alert('Данные сохранены');
+    useToastStore.getState().showToast('✓', 'Данные сохранены');
   };
 
   return (
@@ -79,7 +79,7 @@ const ProfileSecurity = () => {
   const handlePasswordChange = (e) => {
     e.preventDefault();
     // TODO: Вызов API для смены пароля
-    alert('Пароль изменён');
+    useToastStore.getState().showToast('✓', 'Пароль изменён');
   };
 
   return (
@@ -198,9 +198,9 @@ const ProfileOrders = () => {
                 <div className="o-addr">{o.addr}</div>
               </div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <button className="btn-repeat" onClick={() => alert('Функция повтора заказа в разработке')}>↻ Повторить заказ</button>
+                <button className="btn-repeat" onClick={() => useToastStore.getState().showToast('ℹ️', 'Функция повтора заказа в разработке')}>↻ Повторить заказ</button>
                 {o.status === 'new' && (
-                  <button className="btn-cancel" onClick={() => alert('Функция отмены заказа в разработке')}>Отменить</button>
+                  <button className="btn-cancel" onClick={() => useToastStore.getState().showToast('ℹ️', 'Функция отмены заказа в разработке')}>Отменить</button>
                 )}
               </div>
             </div>

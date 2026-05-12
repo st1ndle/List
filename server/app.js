@@ -28,6 +28,7 @@ const catalogRoutes      = require('./routes/catalog.routes');
 const warehouseRoutes    = require('./routes/warehouses.routes');
 const adminOrderRoutes   = require('./routes/admin/orders.routes');
 const adminWarehouseRoutes = require('./routes/admin/warehouses.routes');
+const adminCatalogRoutes = require('./routes/admin/catalog.routes');
 
 const app = express();
 
@@ -94,6 +95,7 @@ app.use('/api/orders',           orderRoutes);          // Создание за
 app.use('/api/warehouses',       warehouseRoutes);      // Список активных складов (публичный)
 app.use('/api/admin/orders',     adminOrderRoutes);     // Управление заказами (только для admin)
 app.use('/api/admin/warehouses', adminWarehouseRoutes); // Управление складами (только для admin)
+app.use('/api/admin',            adminCatalogRoutes);   // Категории и продукты (admin)
 app.use('/',                     catalogRoutes);         // /categories, /products, /api/categories/lowest-prices
 
 // ── Health Check ───────────────────────────────────────────────────────────────

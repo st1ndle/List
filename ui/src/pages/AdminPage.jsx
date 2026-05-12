@@ -4,6 +4,8 @@ import ApiStorage from '../api/ApiStorage';
 import useAdminStore from '../store/useAdminStore';
 import AdminOrders from '../components/admin/AdminOrders';
 import AdminWarehouses from '../components/admin/AdminWarehouses';
+import AdminCategories from '../components/admin/AdminCategories';
+import AdminProducts from '../components/admin/AdminProducts';
 import './AdminPage.css';
 
 /**
@@ -84,6 +86,18 @@ class AdminPageContent extends Component {
             >
               Склады
             </button>
+            <button 
+              className={activeTab === 'categories' ? 'active' : ''} 
+              onClick={() => this.setState({ activeTab: 'categories' })}
+            >
+              Категории
+            </button>
+            <button 
+              className={activeTab === 'products' ? 'active' : ''} 
+              onClick={() => this.setState({ activeTab: 'products' })}
+            >
+              Продукты
+            </button>
           </nav>
         </aside>
         
@@ -98,6 +112,14 @@ class AdminPageContent extends Component {
             <AdminWarehouses 
               warehouses={store.warehouses} 
             />
+          )}
+
+          {activeTab === 'categories' && (
+            <AdminCategories />
+          )}
+
+          {activeTab === 'products' && (
+            <AdminProducts />
           )}
         </main>
       </div>

@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { Button } from '../ui/Button';
 import { InputField, FormRow } from '../ui/Form';
+import useToastStore from '../../store/useToastStore';
 
 function ProfileDataForm({ user, onSave }) {
   const handleSubmit = (e) => {
@@ -8,7 +9,7 @@ function ProfileDataForm({ user, onSave }) {
     if (onSave) {
       onSave();
     } else {
-      alert('✓ Данные сохранены');
+      useToastStore.getState().showToast('✓', 'Данные сохранены');
     }
   };
 

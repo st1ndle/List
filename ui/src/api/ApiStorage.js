@@ -106,7 +106,7 @@ class ApiStorage {
     orders: {
       /**
        * Список заказов с пагинацией и поиском (только для admin)
-       * @param {{ search?, cursor?, limit?, status? }} [params]
+       * @param {{ search?, cursor?, limit?, status?, dateFrom?, dateTo?, amountMin?, amountMax? }} [params]
        * @returns {{ data: object[], nextCursor: number|null }}
        */
       getAll: (params = {}) => {
@@ -150,6 +150,30 @@ class ApiStorage {
        * @param {string} id - UUID склада
        */
       remove: (id) => ApiStorage.request(`/api/admin/warehouses/${id}`, { method: 'DELETE' }),
+    },
+
+    categories: {
+      getAll: (params = {}) => {
+        const qs = new URLSearchParams(
+          Object.fromEntries(Object.entries(params).filter(([, v]) => v != null && v !== ''))
+        ).toString();
+        return ApiStorage.request(`/api/admin/categories${qs ? `?${qs}` : ''}`, { method: 'GET' });
+      },
+      create: (data) => ApiStorage.request('/api/admin/categories', { method: 'POST', body: data }),
+      update: (id, data) => ApiStorage.request(`/api/admin/categories/${id}`, { method: 'PUT', body: data }),
+      remove: (id) => ApiStorage.request(`/api/admin/categories/${id}`, { method: 'DELETE' }),
+    },
+
+    products: {
+      getAll: (params = {}) => {
+        const qs = new URLSearchParams(
+          Object.fromEntries(Object.entries(params).filter(([, v]) => v != null && v !== ''))
+        ).toString();
+        return ApiStorage.request(`/api/admin/products${qs ? `?${qs}` : ''}`, { method: 'GET' });
+      },
+      create: (data) => ApiStorage.request('/api/admin/products', { method: 'POST', body: data }),
+      update: (id, data) => ApiStorage.request(`/api/admin/products/${id}`, { method: 'PUT', body: data }),
+      remove: (id) => ApiStorage.request(`/api/admin/products/${id}`, { method: 'DELETE' }),
     },
   };
 }

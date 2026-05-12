@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import HeaderContainer from './components/header/HeaderContainer';
+import Toast from './components/ui/Toast';
 import HomePage from './pages/HomePage';
 import CataloguePage from './pages/CataloguePage';
 import ServicesPage from './pages/ServicesPage';
@@ -18,6 +19,7 @@ function App() {
   return (
     <main className="app-root">
       <HeaderContainer />
+      <Toast />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/catalogue" element={<CataloguePage />} />

@@ -1,0 +1,61 @@
+.ui-select-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.ui-select-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink3);
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+
+.ui-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.ui-select {
+  width: 100%;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 36px 11px 14px;
+  font-size: 14px;
+  outline: none;
+  transition: all .2s;
+  color: var(--ink);
+  appearance: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.ui-select:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(26, 92, 56, 0.1);
+}
+
+.ui-select-arrow {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  color: var(--ink3);
+  pointer-events: none;
+}
+
+.ui-select-group.has-error .ui-select {
+  border-color: var(--red);
+}
+
+.ui-select-error {
+  font-size: 12px;
+  color: var(--red);
+  margin-top: 2px;
+}

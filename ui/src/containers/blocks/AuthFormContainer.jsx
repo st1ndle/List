@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
+import useToastStore from '../../store/useToastStore';
 import './AuthFormContainer.css';
 
 function AuthFormContainer() {
@@ -26,7 +27,7 @@ function AuthFormContainer() {
     const loginValue = loginMethod === 'email' ? lEmail.trim() : lPhone.trim();
 
     if (!loginValue || !lPass) {
-      alert('⚠️ Заполните все поля');
+      useToastStore.getState().showToast('⚠️', 'Заполните все поля');
       return;
     }
 
@@ -42,10 +43,10 @@ function AuthFormContainer() {
 
       // Note: Ideally checkAuthStatus and loadOrders would be here, managed via global state (Zustand)
       // For now, we mimic the UI flow.
-      alert('👋 Добро пожаловать!');
+      useToastStore.getState().showToast('👋', 'Добро пожаловать!');
       navigate('/catalogue');
     } catch (err) {
-      alert('⚠️ ' + err.message);
+      useToastStore.getState().showToast('⚠️', err.message);
     }
   };
 
@@ -57,19 +58,19 @@ function AuthFormContainer() {
     const phone = rPh.trim();
     
     if (!name || (!email && !phone) || !rPass) {
-      alert('⚠️ Заполните обязательные поля');
+      useToastStore.getState().showToast('⚠️', 'Заполните обязательные поля');
       return;
     }
     if (email && !/^\S+@\S+\.\S+$/.test(email)) {
-      alert('⚠️ Укажите корректную почту');
+      useToastStore.getState().showToast('⚠️', 'Укажите корректную почту');
       return;
     }
     if (rPass.length < 8) {
-      alert('⚠️ Пароль — минимум 8 символов');
+      useToastStore.getState().showToast('⚠️', 'Пароль — минимум 8 символов');
       return;
     }
     if (rPass !== rPass2) {
-      alert('⚠️ Пароли не совпадают');
+      useToastStore.getState().showToast('⚠️', 'Пароли не совпадают');
       return;
     }
 
@@ -89,10 +90,10 @@ function AuthFormContainer() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Ошибка регистрации');
 
-      alert('🎉 Регистрация успешна!');
+      useToastStore.getState().showToast('🎉', 'Регистрация успешна!');
       navigate('/catalogue');
     } catch (err) {
-      alert('⚠️ ' + err.message);
+      useToastStore.getState().showToast('⚠️', err.message);
     }
   };
 

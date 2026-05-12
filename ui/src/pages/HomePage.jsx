@@ -6,13 +6,9 @@ import ServiceCard from '../components/site/ServiceCard';
 import SiteFooter from '../components/site/SiteFooter';
 import HeroContainer from '../containers/blocks/HeroContainer';
 import ApiStorage from '../api/ApiStorage';
+import useSiteSettingsStore from '../store/useSiteSettingsStore';
 import './HomePage.css';
 
-const heroStats = [
-  { value: '450+', label: 'Позиций в каталоге' },
-  { value: '17К', label: 'Паллетомест на складе' },
-  { value: '120', label: 'Единиц транспорта' },
-];
 
 const fallbackHeroCategories = [
   { icon: '🍷', name: 'Вино', subtitle: 'Красное, белое, розовое, игристое', price: 'от 290₽' },
@@ -75,6 +71,11 @@ const clients = [
 function HomePage() {
   const navigate = useNavigate();
   const [heroCategories, setHeroCategories] = useState(fallbackHeroCategories);
+  const { fetchSettings, getSetting } = useSiteSettingsStore();
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   useEffect(() => {
     let isMounted = true;
@@ -126,7 +127,11 @@ function HomePage() {
         secondaryLabel="Получить консультацию"
         onPrimaryClick={() => navigate('/catalogue')}
         onSecondaryClick={() => navigate('/contacts')}
-        stats={heroStats}
+        stats={[
+          { value: '450+',                              label: 'Позиций в каталоге' },
+          { value: getSetting('stat_pallets', '17К'),  label: 'Паллетомест на складе' },
+          { value: getSetting('stat_transport', '120'), label: 'Единиц транспорта' },
+        ]}
         categories={heroCategories.map((category) => ({
           ...category,
           onClick: () => navigate('/catalogue'),
@@ -156,23 +161,23 @@ function HomePage() {
 
           <div className="about-visual">
             <div className="av-card">
-              <div className="av-num">17К</div>
+              <div className="av-num">{getSetting('stat_pallets', '17К')}</div>
               <div className="av-lbl">паллетомест</div>
             </div>
             <div className="av-card">
-              <div className="av-num">120</div>
+              <div className="av-num">{getSetting('stat_transport', '120')}</div>
               <div className="av-lbl">единиц транспорта</div>
             </div>
             <div className="av-card">
-              <div className="av-num">150</div>
+              <div className="av-num">{getSetting('stat_employees', '150')}</div>
               <div className="av-lbl">сотрудников</div>
             </div>
             <div className="av-card">
-              <div className="av-num">А</div>
+              <div className="av-num">{getSetting('stat_warehouse_class', 'А')}</div>
               <div className="av-lbl">класс склада</div>
             </div>
             <div className="av-card av-card-dark">
-              <div className="av-num">500 тонн / день</div>
+              <div className="av-num">{getSetting('stat_daily_cargo', '500 тонн / день')}</div>
               <div className="av-lbl">ежедневный оборот грузов</div>
             </div>
           </div>

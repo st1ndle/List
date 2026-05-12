@@ -6,6 +6,7 @@ import AdminOrders from '../components/admin/AdminOrders';
 import AdminWarehouses from '../components/admin/AdminWarehouses';
 import AdminCategories from '../components/admin/AdminCategories';
 import AdminProducts from '../components/admin/AdminProducts';
+import AdminSettings from '../components/admin/AdminSettings';
 import './AdminPage.css';
 
 /**
@@ -98,6 +99,12 @@ class AdminPageContent extends Component {
             >
               Продукты
             </button>
+            <button 
+              className={activeTab === 'settings' ? 'active' : ''} 
+              onClick={() => this.setState({ activeTab: 'settings' })}
+            >
+              Настройки сайта
+            </button>
           </nav>
         </aside>
         
@@ -120,6 +127,10 @@ class AdminPageContent extends Component {
 
           {activeTab === 'products' && (
             <AdminProducts />
+          )}
+
+          {activeTab === 'settings' && (
+            <AdminSettings />
           )}
         </main>
       </div>

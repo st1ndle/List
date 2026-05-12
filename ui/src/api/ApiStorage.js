@@ -101,6 +101,17 @@ class ApiStorage {
     check: () => ApiStorage.request('/health', { method: 'GET' }),
   };
 
+  // ─── Настройки сайта (публичные) ──────────────────────────────────────────
+  static settings = {
+    /**
+     * Получение всех публичных настроек сайта.
+     * Возвращает плоский объект { key: value }.
+     * Например: { stat_pallets: '17К', stat_transport: '120' }
+     */
+    getAll: () => ApiStorage.request('/api/settings', { method: 'GET' }),
+  };
+
+
   // ─── Администраторские методы ─────────────────────────────────────────────
   static admin = {
     orders: {
@@ -175,7 +186,24 @@ class ApiStorage {
       update: (id, data) => ApiStorage.request(`/api/admin/products/${id}`, { method: 'PUT', body: data }),
       remove: (id) => ApiStorage.request(`/api/admin/products/${id}`, { method: 'DELETE' }),
     },
+
+    settings: {
+      /**
+       * Список всех настроек сайта с label и датой обновления (только для admin)
+       * @returns {Array<{ key, value, label, updated_at }>}
+       */
+      getAll: () => ApiStorage.request('/api/admin/settings', { method: 'GET' }),
+
+      /**
+       * Обновляет значение настройки (только для admin)
+       * @param {string} key   - Ключ настройки (например, 'stat_pallets')
+       * @param {string} value - Новое значение
+       */
+      update: (key, value) =>
+        ApiStorage.request(`/api/admin/settings/${key}`, { method: 'PUT', body: { value } }),
+    },
   };
 }
+
 
 export default ApiStorage;

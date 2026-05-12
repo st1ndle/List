@@ -1,14 +1,17 @@
 import { useEffect } from 'react';
 import SectionHeading from '../components/site/SectionHeading';
 import useWarehouseStore from '../store/useWarehouseStore';
+import useSiteSettingsStore from '../store/useSiteSettingsStore';
 import './AboutPage.css';
 
 function AboutPage() {
   const { warehouses, fetchWarehouses } = useWarehouseStore();
+  const { fetchSettings, getSetting } = useSiteSettingsStore();
 
   useEffect(() => {
     fetchWarehouses();
-  }, [fetchWarehouses]);
+    fetchSettings();
+  }, [fetchWarehouses, fetchSettings]);
 
   return (
     <main className="about-page">
@@ -43,11 +46,11 @@ function AboutPage() {
 
           <div>
             <div className="about-visual">
-              <div className="av-card"><div className="av-num">1998</div><div className="av-lbl">год основания</div></div>
-              <div className="av-card"><div className="av-num">150</div><div className="av-lbl">сотрудников</div></div>
-              <div className="av-card"><div className="av-num">2000+</div><div className="av-lbl">адресов доставки в день</div></div>
-              <div className="av-card"><div className="av-num">500т</div><div className="av-lbl">грузов в сутки</div></div>
-              <div className="av-card av-card-dark"><div className="av-num">17 000</div><div className="av-lbl">паллетомест · 3PL · FMCG</div></div>
+              <div className="av-card"><div className="av-num">{getSetting('stat_year', '1998')}</div><div className="av-lbl">год основания</div></div>
+              <div className="av-card"><div className="av-num">{getSetting('stat_employees', '150')}</div><div className="av-lbl">сотрудников</div></div>
+              <div className="av-card"><div className="av-num">{getSetting('stat_addresses', '2000+')}</div><div className="av-lbl">адресов доставки в день</div></div>
+              <div className="av-card"><div className="av-num">{getSetting('stat_daily_cargo', '500т')}</div><div className="av-lbl">грузов в сутки</div></div>
+              <div className="av-card av-card-dark"><div className="av-num">{getSetting('stat_pallets', '17 000')}</div><div className="av-lbl">паллетомест · 3PL · FMCG</div></div>
             </div>
 
             <div className="about-page__warehouses">

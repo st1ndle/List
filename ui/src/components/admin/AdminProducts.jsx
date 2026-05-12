@@ -7,6 +7,7 @@ import { Checkbox } from '../ui/Checkbox';
 import { ColorPicker } from '../ui/ColorPicker';
 import { Button, IconButton } from '../ui/Button';
 import './AdminProducts.css';
+import './Admin.css';
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
@@ -157,7 +158,7 @@ export default function AdminProducts() {
   };
 
   return (
-    <div className="admin-products">
+    <div className="admin-products admin-section">
       <div className="admin-products-header">
         <h2>Продукты</h2>
         <Button onClick={handleCreate} primary>+ Добавить</Button>

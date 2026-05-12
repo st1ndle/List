@@ -6,6 +6,7 @@ import { Button, IconButton } from '../ui/Button';
 import { ColorPicker } from '../ui/ColorPicker';
 import { Checkbox } from '../ui/Checkbox';
 import './AdminCategories.css';
+import './Admin.css';
 
 export default function AdminCategories() {
   const [categories, setCategories] = useState([]);
@@ -70,7 +71,7 @@ export default function AdminCategories() {
   };
 
   return (
-    <div className="admin-categories">
+    <div className="admin-categories admin-section">
       <div className="admin-categories-header">
         <h2>Категории</h2>
         <Button onClick={handleCreate} primary>+ Добавить</Button>

@@ -1,6 +1,6 @@
 services:
   mssql:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    image: mcr.microsoft.com/mssql/server:2022-CU13-ubuntu-22.04
     container_name: list-mssql
     environment:
       ACCEPT_EULA: "Y"
@@ -9,7 +9,7 @@ services:
     ports:
       - "1433:1433"
     volumes:
-      - mssql_data:/var/opt/mssql
+      - ./mssql_data:/var/opt/mssql
     healthcheck:
       test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "StrongP@ssw0rd!" -C -Q "SELECT 1" || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "StrongP@ssw0rd!" -Q "SELECT 1" || exit 1
       interval: 10s
@@ -17,7 +17,7 @@ services:
       retries: 10
 
   mssql-init:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    image: mcr.microsoft.com/mssql/server:2022-CU13-ubuntu-22.04
     container_name: mssql-init
     depends_on:
       mssql:
@@ -28,14 +28,9 @@ services:
     command: >
       bash -c '
         set -e
-        SQLCMD=/opt/mssql-tools18/bin/sqlcmd
-        if [ ! -x "$$SQLCMD" ]; then SQLCMD=/opt/mssql-tools/bin/sqlcmd; fi
         echo "Running init.sql..."
-        "$$SQLCMD" -S mssql -U sa -P "StrongP@ssw0rd!" -C -b -i /init.sql
+        /opt/mssql-tools18/bin/sqlcmd -S mssql -U sa -P "StrongP@ssw0rd!" -C -i /init.sql || /opt/mssql-tools/bin/sqlcmd -S mssql -U sa -P "StrongP@ssw0rd!" -i /init.sql
         echo "Running seed.sql..."
-        "$$SQLCMD" -S mssql -U sa -P "StrongP@ssw0rd!" -C -b -i /seed.sql
+        /opt/mssql-tools18/bin/sqlcmd -S mssql -U sa -P "StrongP@ssw0rd!" -C -i /seed.sql || /opt/mssql-tools/bin/sqlcmd -S mssql -U sa -P "StrongP@ssw0rd!" -i /seed.sql
         echo "Database initialized."
       '
-
-volumes:
-  mssql_data:

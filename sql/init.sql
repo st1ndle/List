@@ -10,8 +10,10 @@ BEGIN
         name NVARCHAR(255) NOT NULL,
         color_hex VARCHAR(50) NOT NULL,
         sort_order INT DEFAULT 0,
-        is_active BIT DEFAULT 1
+        is_active BIT DEFAULT 1,
+        deleted_at DATETIME2 NULL
     );
+    CREATE INDEX IX_Categories_IsActive ON categories(is_active);
 END
 
 -- Таблица товаров (напитков)
@@ -33,11 +35,15 @@ BEGIN
         is_active BIT DEFAULT 1,
         created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
         updated_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+        deleted_at DATETIME2 NULL,
         
         CONSTRAINT FK_Products_Categories FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
         CONSTRAINT CHK_Products_Attributes_JSON CHECK (attributes IS NULL OR ISJSON(attributes) = 1)
     );
     CREATE INDEX idx_products_category_id ON products(category_id);
+    CREATE INDEX idx_products_is_active ON products(is_active);
+    CREATE INDEX idx_products_name ON products(name);
+    CREATE INDEX idx_products_brand ON products(brand);
 END
 
 -- Таблица пользователей
@@ -54,10 +60,12 @@ BEGIN
         is_active BIT DEFAULT 1,
         created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
         updated_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+        deleted_at DATETIME2 NULL,
         
         CONSTRAINT CHK_Users_Role CHECK (role IN ('user', 'admin'))
     );
     CREATE INDEX IX_Users_Phone ON users(phone);
+    CREATE INDEX IX_Users_IsActive ON users(is_active);
 END
 
 -- Таблица сессий для connect-mssql-v2
@@ -71,24 +79,26 @@ BEGIN
 END
 
 -- Таблица складов
-IF OBJECT_ID('dbo.warehouses', 'U') IS NOT NULL DROP TABLE warehouses;
-
-CREATE TABLE warehouses (
-    id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-    -- Код склада (4 символа, используется в публичном ID заказа, напр. UF32)
-    warehouse_code NVARCHAR(10) NOT NULL UNIQUE,
-    name NVARCHAR(255) NOT NULL,
-    city NVARCHAR(100) NOT NULL,
-    address NVARCHAR(255) NOT NULL,
-    phone NVARCHAR(50),
-    -- Время работы: два отдельных поля типа TIME (без даты)
-    working_hours_start TIME,
-    working_hours_end   TIME,
-    is_active BIT DEFAULT 1,
-    created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
-    updated_at DATETIME2 DEFAULT SYSUTCDATETIME()
-);
-CREATE INDEX IX_Warehouses_IsActive ON warehouses(is_active);
+IF OBJECT_ID('dbo.warehouses', 'U') IS NULL
+BEGIN
+    CREATE TABLE warehouses (
+        id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+        -- Код склада (4 символа, используется в публичном ID заказа, напр. UF32)
+        warehouse_code NVARCHAR(10) NOT NULL UNIQUE,
+        name NVARCHAR(255) NOT NULL,
+        city NVARCHAR(100) NOT NULL,
+        address NVARCHAR(255) NOT NULL,
+        phone NVARCHAR(50),
+        -- Время работы: два отдельных поля типа TIME (без даты)
+        working_hours_start TIME,
+        working_hours_end   TIME,
+        is_active BIT DEFAULT 1,
+        created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+        updated_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+        deleted_at DATETIME2 NULL
+    );
+    CREATE INDEX IX_Warehouses_IsActive ON warehouses(is_active);
+END
 
 -- Таблица заказов
 IF OBJECT_ID('dbo.orders', 'U') IS NULL
@@ -116,6 +126,7 @@ BEGIN
         comment NVARCHAR(MAX),
         created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
         updated_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+        deleted_at DATETIME2 NULL,
         
         CONSTRAINT FK_Orders_Users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
         CONSTRAINT CHK_Orders_Status CHECK (status IN ('new', 'processing', 'completed', 'cancelled'))
@@ -141,7 +152,7 @@ BEGIN
         CONSTRAINT FK_OrderItems_Products FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE NO ACTION,
         CONSTRAINT CHK_OrderItems_Quantity CHECK (quantity > 0)
     );
-CREATE INDEX IX_OrderItems_OrderId ON order_items(order_id);
+    CREATE INDEX IX_OrderItems_OrderId ON order_items(order_id);
 END
 
 -- Таблица настроек сайта
@@ -154,3 +165,4 @@ BEGIN
         updated_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
     );
 END
+

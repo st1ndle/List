@@ -1,48 +1,75 @@
+/**
+ * server/routes/admin/orders.routes.js — Управление заказами в административной панели.
+ *
+ * Все маршруты защищены requireAdmin и монтируются с префиксом /api/admin/orders.
+ * Позволяют просматривать список заказов с фильтрацией и изменять их статус.
+ *
+ * Маршруты:
+ *   GET   /api/admin/orders            — список всех заказов (фильтры, поиск, курсорная пагинация)
+ *   PATCH /api/admin/orders/:id/status — изменение статуса заказа
+ */
+
 const express        = require('express');
 const sql            = require('mssql');
 const { getPool }    = require('../../config/db');
 const requireAdmin   = require('../../middleware/requireAdmin');
-const { validateOrderStatus } = require('../../validators/warehouse.validator');
+const { validateOrderStatus } = require('../../validators/order.validator');
 
 const router = express.Router();
+
+// Применяем проверку прав администратора ко всем маршрутам в этом файле
 router.use(requireAdmin);
 
-/**
- * GET /api/admin/orders
- * Список заказов с курсорной пагинацией и поиском.
- * Query: search, cursor, limit, status, dateFrom, dateTo, amountMin, amountMax
- *
- * Фильтры:
- *   status     — точное совпадение статуса ('new' | 'processing' | 'completed' | 'cancelled')
- *   dateFrom   — нижняя граница даты создания заказа (YYYY-MM-DD, включительно)
- *   dateTo     — верхняя граница даты создания заказа (YYYY-MM-DD, включительно до конца дня)
- *   amountMin  — минимальная сумма заказа (включительно)
- *   amountMax  — максимальная сумма заказа (включительно)
- */
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/admin/orders
+// Возвращает список заказов с поддержкой курсорной пагинации и сложной фильтрации.
+//
+// Query параметры:
+//   limit     {number} — количество записей (макс. 100, default 20)
+//   cursor    {number} — значение order_number для получения следующей страницы
+//   search    {string} — поиск по ID, имени, телефону, email или номеру заказа
+//   status    {string} — фильтр по статусу (new, processing, completed, cancelled)
+//   dateFrom  {string} — дата начала (YYYY-MM-DD)
+//   dateTo    {string} — дата окончания (YYYY-MM-DD)
+//   amountMin {number} — минимальная сумма заказа
+//   amountMax {number} — максимальная сумма заказа
+//
+// Ответ: { data: [], nextCursor: number | null }
+// ─────────────────────────────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
   try {
     const p         = await getPool();
+    // Ограничиваем лимит сверху, чтобы избежать перегрузки БД
     const limit     = Math.min(parseInt(req.query.limit || '20', 10), 100);
     const cursor    = req.query.cursor ? parseInt(req.query.cursor, 10) : null;
     const search    = (req.query.search || '').trim();
     const status    = req.query.status    || null;
-    const dateFrom  = req.query.dateFrom  || null; // YYYY-MM-DD
-    const dateTo    = req.query.dateTo    || null; // YYYY-MM-DD
+    const dateFrom  = req.query.dateFrom  || null; 
+    const dateTo    = req.query.dateTo    || null; 
     const amountMin = req.query.amountMin ? parseFloat(req.query.amountMin) : null;
     const amountMax = req.query.amountMax ? parseFloat(req.query.amountMax) : null;
 
     const request      = p.request();
     const whereClauses = [];
+
+    // Запрашиваем на один элемент больше (limit + 1), чтобы понять, есть ли следующая страница
     request.input('limit', sql.Int, limit + 1);
 
+    // Шаг 1: Формирование динамических условий WHERE.
+    
+    // Курсорная пагинация: выбираем записи строго "меньше" (старее) текущего курсора
     if (cursor !== null) {
       request.input('cursor', sql.Int, cursor);
       whereClauses.push('o.order_number < @cursor');
     }
+    
+    // Фильтр по статусу
     if (status) {
       request.input('status', sql.NVarChar, status);
       whereClauses.push('o.status = @status');
     }
+
+    // Полнотекстовый поиск по нескольким полям сразу
     if (search) {
       request.input('search',      sql.NVarChar, `%${search}%`);
       request.input('searchExact', sql.NVarChar, search);
@@ -55,17 +82,19 @@ router.get('/', async (req, res) => {
         OR CAST(o.order_number AS NVARCHAR) = @searchExact
       )`);
     }
-    // Диапазон дат: dateFrom — начало дня, dateTo — конец дня (до 23:59:59.999)
+
+    // Фильтрация по диапазону дат создания
     if (dateFrom) {
       request.input('dateFrom', sql.Date, dateFrom);
       whereClauses.push('o.created_at >= @dateFrom');
     }
     if (dateTo) {
       request.input('dateTo', sql.Date, dateTo);
-      // DATEADD(day,1,...) захватывает весь последний день включительно
+      // DATEADD используется для захвата всего последнего дня включительно
       whereClauses.push('o.created_at < DATEADD(day, 1, @dateTo)');
     }
-    // Диапазон сумм
+
+    // Фильтрация по сумме заказа
     if (amountMin !== null) {
       request.input('amountMin', sql.Decimal(18, 2), amountMin);
       whereClauses.push('o.total_amount >= @amountMin');
@@ -76,11 +105,14 @@ router.get('/', async (req, res) => {
     }
 
     const whereSQL = whereClauses.length > 0 ? 'WHERE ' + whereClauses.join(' AND ') : '';
+
+    // Шаг 2: Выполнение основного запроса на получение заголовков заказов
     const result   = await request.query(`
       SELECT TOP (@limit)
         o.id, o.order_number, o.public_id, o.status,
         o.total_amount, o.customer_name, o.customer_phone,
-        o.delivery_address, o.comment, o.created_at, o.updated_at,
+        o.delivery_address, o.warehouse_code, o.comment, 
+        o.created_at, o.updated_at,
         u.email          AS user_email,
         u.first_name     AS user_first_name,
         u.last_name      AS user_last_name
@@ -92,17 +124,28 @@ router.get('/', async (req, res) => {
 
     const rows    = result.recordset;
     const hasMore = rows.length > limit;
+    
+    // Если получили лишнюю строку — убираем её из ответа, но ставим флаг hasMore
     if (hasMore) rows.pop();
 
+    // Шаг 3: Получение позиций (items) для всех найденных заказов одним запросом
     if (rows.length > 0) {
-      const orderIds = rows.map(r => `'${r.id}'`).join(',');
-      const itemsRes = await p.request().query(`
+      // Чтобы не склеивать ID вручную, создаем параметры @id0, @id1...
+      const itemsRequest = p.request();
+      const idsParams = rows.map((r, i) => {
+        const paramName = `id${i}`;
+        itemsRequest.input(paramName, sql.UniqueIdentifier, r.id);
+        return `@${paramName}`;
+      }).join(',');
+
+      const itemsRes = await itemsRequest.query(`
         SELECT oi.order_id, oi.product_id, oi.quantity, oi.price_at_purchase, p.name, p.emoji
         FROM order_items oi
         LEFT JOIN products p ON oi.product_id = p.id
-        WHERE oi.order_id IN (${orderIds})
+        WHERE oi.order_id IN (${idsParams})
       `);
       
+      // Группируем позиции по ID заказа
       const itemsByOrder = {};
       itemsRes.recordset.forEach(item => {
         if (!itemsByOrder[item.order_id]) itemsByOrder[item.order_id] = [];
@@ -114,21 +157,32 @@ router.get('/', async (req, res) => {
           price_at_purchase: item.price_at_purchase,
         });
       });
+      
+      // Добавляем массив items в каждый объект заказа
       rows.forEach(o => { o.items = itemsByOrder[o.id] || []; });
     }
 
-    res.json({ data: rows, nextCursor: hasMore ? rows[rows.length - 1].order_number : null });
+    res.json({ 
+      data: rows, 
+      nextCursor: hasMore ? rows[rows.length - 1].order_number : null 
+    });
   } catch (e) {
-    console.error('Admin orders fetch error:', e);
+    console.error('[Admin Orders] Fetch error:', e);
     res.status(500).json({ error: e.message });
   }
 });
 
-/**
- * PATCH /api/admin/orders/:id/status
- * Body: { status: 'new' | 'processing' | 'completed' | 'cancelled' }
- */
+// ─────────────────────────────────────────────────────────────────────────────
+// PATCH /api/admin/orders/:id/status
+// Изменение статуса заказа.
+//
+// Тело запроса (JSON):
+//   status {string} — новый статус ('new' | 'processing' | 'completed' | 'cancelled')
+//
+// Ответ: { status: 'ok', order: { ... } }
+// ─────────────────────────────────────────────────────────────────────────────
 router.patch('/:id/status', async (req, res) => {
+  // Валидация: разрешены только определенные статусы
   const validationErr = validateOrderStatus(req.body.status);
   if (validationErr) return res.status(400).json(validationErr);
 
@@ -147,6 +201,7 @@ router.patch('/:id/status', async (req, res) => {
     if (result.recordset.length === 0) return res.status(404).json({ error: 'Заказ не найден' });
     res.json({ status: 'ok', order: result.recordset[0] });
   } catch (e) {
+    console.error('[Admin Orders] Update status error:', e);
     res.status(500).json({ error: e.message });
   }
 });

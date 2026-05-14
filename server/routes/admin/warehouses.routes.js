@@ -1,19 +1,16 @@
 /**
  * server/routes/admin/warehouses.routes.js — CRUD-управление складами (только для администраторов).
  *
- * Монтируется в app.js под префиксом /api/admin/warehouses.
- * router.use(requireAdmin) защищает все маршруты файла.
+ * Все маршруты этого файла защищены requireAdmin и монтируются с префиксом /api/admin/warehouses.
  *
  * Маршруты:
- *   GET    /api/admin/warehouses      — все склады (включая неактивные)
- *   POST   /api/admin/warehouses      — создать склад
- *   PUT    /api/admin/warehouses/:id  — полное обновление склада
- *   DELETE /api/admin/warehouses/:id  — мягкое удаление (деактивация, is_active = 0)
+ *   GET    /api/admin/warehouses      — получение списка всех складов
+ *   POST   /api/admin/warehouses      — создание нового склада
+ *   PUT    /api/admin/warehouses/:id  — полное обновление данных склада
+ *   DELETE /api/admin/warehouses/:id  — "мягкое" удаление склада (деактивация)
  *
- * Мягкое удаление (soft delete):
- *   Вместо физического DELETE из таблицы мы ставим флаг is_active = 0.
- *   Это позволяет сохранить историю (заказы ссылаются на склад),
- *   а клиентский API (/api/warehouses) просто фильтрует по is_active = 1.
+ * Особенности:
+ *   Используется "Мягкое удаление" (is_active = 0) для сохранения целостности истории заказов.
  */
 
 const express      = require('express');
@@ -23,12 +20,15 @@ const requireAdmin = require('../../middleware/requireAdmin');
 const { validateWarehouse } = require('../../validators/warehouse.validator');
 
 const router = express.Router();
-router.use(requireAdmin); // Все маршруты ниже доступны только администраторам
+
+// Применяем проверку прав администратора ко всем маршрутам в этом файле
+router.use(requireAdmin);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/admin/warehouses
-// Возвращает ВСЕ склады, включая деактивированные (в отличие от публичного API).
-// Нужно для административной панели, чтобы видеть полный список и управлять им.
+// Возвращает список ВСЕХ складов в системе, включая деактивированные.
+// Это необходимо для админ-панели, чтобы менеджер мог видеть архивные склады и
+// при необходимости возвращать их в работу.
 // ─────────────────────────────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
   try {
@@ -43,27 +43,27 @@ router.get('/', async (req, res) => {
     `);
     res.json(result.recordset);
   } catch (e) {
+    console.error('[Admin Warehouses] Get all error:', e);
     res.status(500).json({ error: e.message });
   }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/admin/warehouses
-// Создание нового склада.
+// Создание нового склада в базе данных.
 //
 // Тело запроса (JSON):
-//   warehouse_code      {string}  — уникальный код (обязательно, макс. 10 симв.)
-//   name                {string}  — название склада (обязательно)
-//   city                {string}  — город (обязательно)
-//   address             {string}  — адрес (обязательно)
-//   phone               {string}  — телефон (опционально)
-//   working_hours_start {string}  — начало работы, формат "HH:MM" (опционально)
-//   working_hours_end   {string}  — конец работы, формат "HH:MM" (опционально)
-//   is_active           {boolean} — активен ли склад (по умолчанию true)
-//
-// Ответ: созданный объект склада со статусом 201
+//   warehouse_code      {string}  — Уникальный код (макс. 10 символов)
+//   name                {string}  — Понятное название
+//   city                {string}  — Город расположения
+//   address             {string}  — Точный адрес
+//   phone               {string}  — Контактный телефон (опционально)
+//   working_hours_start {string}  — Начало работы ("HH:MM")
+//   working_hours_end   {string}  — Конец работы ("HH:MM")
+//   is_active           {boolean} — Статус (по умолчанию true)
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/', async (req, res) => {
+  // Шаг 1: Валидация входных данных
   const err = validateWarehouse(req.body);
   if (err) return res.status(400).json(err);
 
@@ -72,7 +72,7 @@ router.post('/', async (req, res) => {
   try {
     const p      = await getPool();
     const result = await p.request()
-      // toUpperCase().slice(0, 10) — приводим код к верхнему регистру и обрезаем до 10 символов
+      // Нормализация: приводим код к верхнему регистру для единообразия поиска
       .input('code',   sql.NVarChar, warehouse_code.toUpperCase().slice(0, 10))
       .input('name',   sql.NVarChar, name.trim())
       .input('city',   sql.NVarChar, city.trim())
@@ -80,31 +80,30 @@ router.post('/', async (req, res) => {
       .input('phone',  sql.NVarChar, phone  || null)
       .input('start',  sql.Time,     working_hours_start || null)
       .input('end',    sql.Time,     working_hours_end   || null)
-      // is_active !== undefined ? ... : 1 — если поле не передано, по умолчанию склад активен
       .input('active', sql.Bit,      is_active !== undefined ? (is_active ? 1 : 0) : 1)
       .query(`
         INSERT INTO warehouses (warehouse_code, name, city, address, phone, working_hours_start, working_hours_end, is_active)
-        OUTPUT INSERTED.*
-        VALUES (@code, @name, @city, @addr, @phone, @start, @end, @active)
+        VALUES (@code, @name, @city, @addr, @phone, @start, @end, @active);
+
+        SELECT id, warehouse_code, name, city, address, phone,
+               CONVERT(varchar(5), working_hours_start, 108) as working_hours_start,
+               CONVERT(varchar(5), working_hours_end, 108) as working_hours_end,
+               is_active, created_at, updated_at
+        FROM warehouses
+        WHERE id = SCOPE_IDENTITY() OR id = (SELECT TOP 1 id FROM warehouses ORDER BY created_at DESC);
       `);
     res.status(201).json(result.recordset[0]);
   } catch (e) {
-    // Код ошибки 2627 в MSSQL — нарушение UNIQUE-ограничения.
-    // warehouse_code имеет UNIQUE-индекс в таблице, поэтому дубли недопустимы.
-    // Возвращаем 409 Conflict с понятным сообщением вместо технического 500.
+    // 2627 — нарушение UNIQUE CONSTRAINT на поле warehouse_code
     if (e.number === 2627) return res.status(409).json({ error: 'Склад с таким warehouse_code уже существует' });
+    console.error('[Admin Warehouses] Create error:', e);
     res.status(500).json({ error: e.message });
   }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PUT /api/admin/warehouses/:id
-// Полное обновление существующего склада.
-//
-// :id — UUID склада (из URL)
-// Тело запроса — те же поля, что при создании (все обязательные обязательны).
-//
-// Используем PUT (не PATCH), потому что обновляем все поля сразу.
+// Полное обновление данных существующего склада.
 // ─────────────────────────────────────────────────────────────────────────────
 router.put('/:id', async (req, res) => {
   const err = validateWarehouse(req.body);
@@ -129,29 +128,33 @@ router.put('/:id', async (req, res) => {
         SET warehouse_code = @code, name = @name, city = @city, address = @addr,
             phone = @phone, working_hours_start = @start, working_hours_end = @end,
             is_active = @active, updated_at = SYSUTCDATETIME()
-        OUTPUT INSERTED.*
-        WHERE id = @id
+        WHERE id = @id;
+
+        SELECT id, warehouse_code, name, city, address, phone,
+               CONVERT(varchar(5), working_hours_start, 108) as working_hours_start,
+               CONVERT(varchar(5), working_hours_end, 108) as working_hours_end,
+               is_active, created_at, updated_at
+        FROM warehouses
+        WHERE id = @id;
       `);
 
-    // Если recordset пуст — склад с таким id не существует
     if (result.recordset.length === 0) return res.status(404).json({ error: 'Склад не найден' });
     res.json(result.recordset[0]);
   } catch (e) {
     if (e.number === 2627) return res.status(409).json({ error: 'Склад с таким warehouse_code уже существует' });
+    console.error('[Admin Warehouses] Update error:', e);
     res.status(500).json({ error: e.message });
   }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DELETE /api/admin/warehouses/:id
-// Мягкое удаление склада: устанавливает is_active = 0 вместо физического удаления.
+// "Мягкое" удаление склада: перевод в неактивное состояние.
 //
-// Почему не физическое удаление?
-//   Заказы хранят ссылку на warehouse_code. Если удалить склад из таблицы,
-//   история заказов потеряет данные о месте самовывоза.
-//   "Мягкое" удаление сохраняет запись в БД, но скрывает её от клиентов.
-//
-// Ответ: { status: 'ok', id: UUID }
+// Почему не DELETE FROM?
+//   Склады связаны с заказами через warehouse_code. Если физически удалить склад,
+//   в исторических данных о заказах возникнут битые ссылки. 
+//   Вместо этого мы просто скрываем склад из выбора для новых заказов.
 // ─────────────────────────────────────────────────────────────────────────────
 router.delete('/:id', async (req, res) => {
   try {
@@ -168,6 +171,7 @@ router.delete('/:id', async (req, res) => {
     if (result.recordset.length === 0) return res.status(404).json({ error: 'Склад не найден' });
     res.json({ status: 'ok', id: result.recordset[0].id });
   } catch (e) {
+    console.error('[Admin Warehouses] Delete error:', e);
     res.status(500).json({ error: e.message });
   }
 });

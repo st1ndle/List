@@ -55,4 +55,19 @@ function validateCreateOrder({ items, total_amount }) {
   return null;
 }
 
-module.exports = { validateCreateOrder };
+// Список допустимых статусов заказа
+const ALLOWED_ORDER_STATUSES = ['new', 'processing', 'completed', 'cancelled'];
+
+/**
+ * Проверяет, что переданный статус заказа является допустимым.
+ * @param {string} status
+ * @returns {{ error: string } | null}
+ */
+function validateOrderStatus(status) {
+  if (!status || !ALLOWED_ORDER_STATUSES.includes(status)) {
+    return { error: `Недопустимый статус. Допустимые: ${ALLOWED_ORDER_STATUSES.join(', ')}` };
+  }
+  return null;
+}
+
+module.exports = { validateCreateOrder, validateOrderStatus, ALLOWED_ORDER_STATUSES };

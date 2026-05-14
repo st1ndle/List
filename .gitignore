@@ -1,4 +1,11 @@
-node_modules
+node_modules/
+**/node_modules/
 .env
+**/.env
+.env.*
+! .env.example
 
-mssql_data*
+mssql_data/
+dist/
+storybook-static/
+.DS_Store

@@ -1,4 +1,4 @@
-﻿/// <reference types="vitest/config" />
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -31,6 +31,20 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+  },
+  build: {
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true, // Удаляет console.log в продакшене
+        drop_debugger: true,
+      },
+      mangle: {
+        toplevel: true, // Обфусцирует имена переменных на верхнем уровне
+      },
+    },
+    cssMinify: true, // Минификация CSS включена по умолчанию в Vite (esbuild)
+    sourcemap: false, // Отключаем sourcemaps, чтобы код было сложнее дебажить в браузере
   },
   test: {
     projects: [{

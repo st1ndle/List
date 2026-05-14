@@ -27,7 +27,7 @@ router.get('/categories', async (req, res) => {
     const p      = await getPool();
     // ORDER BY sort_order позволяет управлять порядком отображения категорий
     // через поле в БД, не меняя код
-    const result = await p.request().query('SELECT * FROM categories ORDER BY sort_order');
+    const result = await p.request().query('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order');
     res.json(result.recordset);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -54,10 +54,10 @@ router.get('/products', async (req, res) => {
       // Если category_id передан — фильтруем товары по нему
       result = await p.request()
         .input('categoryId', sql.UniqueIdentifier, category_id)
-        .query('SELECT * FROM products WHERE category_id = @categoryId ORDER BY name');
+        .query('SELECT * FROM products WHERE category_id = @categoryId AND is_active = 1 ORDER BY name');
     } else {
-      // Иначе возвращаем все товары
-      result = await p.request().query('SELECT * FROM products ORDER BY name');
+      // Иначе возвращаем все активные товары
+      result = await p.request().query('SELECT * FROM products WHERE is_active = 1 ORDER BY name');
     }
 
     // Поле attributes хранится в БД как JSON-строка (NVarChar).
@@ -114,8 +114,8 @@ router.post('/api/categories/lowest-prices', async (req, res) => {
           (SELECT TOP 1 p2.emoji FROM products p2
            WHERE p2.category_id = c.id ORDER BY p2.price ASC, p2.name ASC) AS category_icon
         FROM categories c
-        LEFT JOIN products p ON c.id = p.category_id
-        WHERE c.id IN (${placeholders}) OR c.name IN (${placeholders})
+        LEFT JOIN products p ON c.id = p.category_id AND p.is_active = 1
+        WHERE (c.id IN (${placeholders}) OR c.name IN (${placeholders})) AND c.is_active = 1
         GROUP BY c.id, c.name
       `);
       return res.json(result.recordset);
@@ -135,6 +135,7 @@ router.post('/api/categories/lowest-prices', async (req, res) => {
          WHERE p2.category_id = c.id ORDER BY p2.price ASC, p2.name ASC) AS category_icon
       FROM categories c
       JOIN products p ON c.id = p.category_id  -- INNER JOIN: исключаем категории без товаров
+      WHERE c.is_active = 1 AND p.is_active = 1
       GROUP BY c.id, c.name
       ORDER BY min_price ASC  -- Сортируем по минимальной цене: сначала дешёвые
     `);

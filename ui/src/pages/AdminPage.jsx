@@ -118,6 +118,7 @@ class AdminPageContent extends Component {
           {activeTab === 'warehouses' && (
             <AdminWarehouses 
               warehouses={store.warehouses} 
+              onRefresh={store.fetchWarehouses}
             />
           )}
 

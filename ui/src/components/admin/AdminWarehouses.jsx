@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import ApiStorage from '../../api/ApiStorage';
 import useToastStore from '../../store/useToastStore';
+import { Button, IconButton } from '../ui/Button';
 import './Admin.css';
 
 /**
@@ -22,6 +23,21 @@ class AdminWarehouses extends Component {
     });
   };
 
+  handleCreateClick = () => {
+    this.setState({
+      editingWarehouseId: 'new',
+      editFormData: {
+        warehouse_code: '',
+        name: '',
+        city: '',
+        address: '',
+        working_hours_start: '09:00',
+        working_hours_end: '18:00',
+        is_active: true
+      }
+    });
+  };
+
   handleCancelEdit = () => {
     this.setState({ editingWarehouseId: null, editFormData: {} });
   };
@@ -39,21 +55,26 @@ class AdminWarehouses extends Component {
   handleSave = async () => {
     const { editingWarehouseId, editFormData } = this.state;
     try {
-      await ApiStorage.admin.warehouses.update(editingWarehouseId, editFormData);
+      if (editingWarehouseId === 'new') {
+        await ApiStorage.admin.warehouses.create(editFormData);
+      } else {
+        await ApiStorage.admin.warehouses.update(editingWarehouseId, editFormData);
+      }
       this.setState({ editingWarehouseId: null, editFormData: {} });
-      window.location.reload();
+      if (this.props.onRefresh) this.props.onRefresh();
     } catch (err) {
-      useToastStore.getState().showToast('❌', `Ошибка обновления: ${err.message}`);
+      useToastStore.getState().showToast('❌', `Ошибка: ${err.message}`);
     }
   };
 
   handleDelete = async () => {
     const { editingWarehouseId } = this.state;
+    if (editingWarehouseId === 'new') return;
     if (!window.confirm('Вы уверены, что хотите удалить этот склад?')) return;
     try {
       await ApiStorage.admin.warehouses.remove(editingWarehouseId);
       this.setState({ editingWarehouseId: null, editFormData: {} });
-      window.location.reload();
+      if (this.props.onRefresh) this.props.onRefresh();
     } catch (err) {
       useToastStore.getState().showToast('❌', `Ошибка удаления: ${err.message}`);
     }
@@ -63,55 +84,64 @@ class AdminWarehouses extends Component {
     const { warehouses } = this.props;
     const { editingWarehouseId, editFormData } = this.state;
 
-    if (!warehouses || warehouses.length === 0) {
-      return (
-        <div className="admin-section">
-          <h3>Управление складами</h3>
-          <div className="admin-empty">Нет складов для отображения.</div>
-        </div>
-      );
-    }
-
     return (
       <div className="admin-section">
-        <h3>Управление складами</h3>
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Код</th>
-              <th>Название</th>
-              <th>Город</th>
-              <th>Адрес</th>
-              <th>Статус</th>
-            </tr>
-          </thead>
-          <tbody>
-            {warehouses.map(w => (
-              <tr 
-                key={w.id} 
-                className="clickable-row"
-                onClick={() => this.handleEditClick(w)} 
-                title="Нажмите для редактирования"
-              >
-                <td>{w.warehouse_code}</td>
-                <td>{w.name}</td>
-                <td>{w.city}</td>
-                <td>{w.address}</td>
-                <td>
-                  <span className={`status-badge ${w.is_active ? 'active' : 'inactive'}`}>
-                    {w.is_active ? 'Активен' : 'Неактивен'}
-                  </span>
-                </td>
+        <div className="admin-header-actions">
+          <h3>Управление складами</h3>
+          <Button primary onClick={this.handleCreateClick}>
+            + Добавить склад
+          </Button>
+        </div>
+
+        {!warehouses || warehouses.length === 0 ? (
+          <div className="admin-empty">Нет складов для отображения.</div>
+        ) : (
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Код</th>
+                <th>Название</th>
+                <th>Город</th>
+                <th>Адрес</th>
+                <th>Статус</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {warehouses.map(w => (
+                <tr 
+                  key={w.id} 
+                  className="clickable-row"
+                  onClick={() => this.handleEditClick(w)} 
+                  title="Нажмите для редактирования"
+                >
+                  <td>{w.warehouse_code}</td>
+                  <td>{w.name}</td>
+                  <td>{w.city}</td>
+                  <td>{w.address}</td>
+                  <td>
+                    <span className={`status-badge ${w.is_active ? 'active' : 'inactive'}`}>
+                      {w.is_active ? 'Активен' : 'Неактивен'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
 
         {editingWarehouseId && (
           <div className="admin-modal-overlay" onClick={this.handleCancelEdit}>
             <div className="admin-modal" onClick={e => e.stopPropagation()}>
-              <button className="admin-modal-close" onClick={this.handleCancelEdit}>&times;</button>
-              <h4 className="admin-modal-title">Редактирование склада</h4>
+              <IconButton 
+                className="admin-modal-close" 
+                ariaLabel="Закрыть" 
+                onClick={this.handleCancelEdit}
+              >
+                &times;
+              </IconButton>
+              <h4 className="admin-modal-title">
+                {editingWarehouseId === 'new' ? 'Новый склад' : 'Редактирование склада'}
+              </h4>
               
               <div className="admin-modal-form">
                 <div className="admin-modal-field">
@@ -119,6 +149,7 @@ class AdminWarehouses extends Component {
                   <input 
                     className="admin-modal-input"
                     name="warehouse_code" 
+                    placeholder="Напр. WH01"
                     value={editFormData.warehouse_code || ''} 
                     onChange={this.handleFormChange} 
                   />
@@ -129,6 +160,7 @@ class AdminWarehouses extends Component {
                   <input 
                     className="admin-modal-input"
                     name="name" 
+                    placeholder="Напр. Основной склад"
                     value={editFormData.name || ''} 
                     onChange={this.handleFormChange} 
                   />
@@ -139,6 +171,7 @@ class AdminWarehouses extends Component {
                   <input 
                     className="admin-modal-input"
                     name="city" 
+                    placeholder="Напр. Москва"
                     value={editFormData.city || ''} 
                     onChange={this.handleFormChange} 
                   />
@@ -149,6 +182,7 @@ class AdminWarehouses extends Component {
                   <input 
                     className="admin-modal-input"
                     name="address" 
+                    placeholder="Напр. ул. Ленина, 10"
                     value={editFormData.address || ''} 
                     onChange={this.handleFormChange} 
                   />
@@ -190,8 +224,14 @@ class AdminWarehouses extends Component {
               </div>
 
               <div className="admin-modal-actions">
-                <button className="admin-btn-delete" onClick={this.handleDelete}>Удалить</button>
-                <button className="admin-btn-save" onClick={this.handleSave}>Обновить</button>
+                {editingWarehouseId !== 'new' && (
+                  <Button variant="danger" onClick={this.handleDelete}>Удалить</Button>
+                )}
+                <div style={{ marginLeft: 'auto' }}>
+                  <Button primary onClick={this.handleSave}>
+                    {editingWarehouseId === 'new' ? 'Создать' : 'Обновить'}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

@@ -1,11 +1,15 @@
 -- Очищаем таблицы перед наполнением
 -- Порядок важен из-за внешних ключей
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+
 DELETE FROM dbo.order_items;
 DELETE FROM dbo.orders;
 DELETE FROM dbo.products;
 DELETE FROM dbo.categories;
 DELETE FROM dbo.users;
 DELETE FROM dbo.warehouses;
+DELETE FROM dbo.site_settings;
 
 -- ==========================================
 -- 1. НАПОЛНЕНИЕ КАТЕГОРИЙ

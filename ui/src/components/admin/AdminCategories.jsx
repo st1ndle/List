@@ -95,7 +95,7 @@ export default function AdminCategories() {
               <tr>
                 <th>Цвет</th>
                 <th>Название</th>
-                <th>Системное имя (Slug)</th>
+                <th>Системное имя</th>
                 <th>Порядок</th>
                 <th>Статус</th>
                 <th>Действия</th>

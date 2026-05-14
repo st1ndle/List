@@ -1,4 +1,7 @@
 -- Таблица категорий
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+
 IF OBJECT_ID('dbo.categories', 'U') IS NULL
 BEGIN
     CREATE TABLE categories (
@@ -138,5 +141,16 @@ BEGIN
         CONSTRAINT FK_OrderItems_Products FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE NO ACTION,
         CONSTRAINT CHK_OrderItems_Quantity CHECK (quantity > 0)
     );
-    CREATE INDEX IX_OrderItems_OrderId ON order_items(order_id);
+CREATE INDEX IX_OrderItems_OrderId ON order_items(order_id);
+END
+
+-- Таблица настроек сайта
+IF OBJECT_ID('dbo.site_settings', 'U') IS NULL
+BEGIN
+    CREATE TABLE site_settings (
+        [key] NVARCHAR(100) NOT NULL PRIMARY KEY,
+        [value] NVARCHAR(255) NOT NULL,
+        [label] NVARCHAR(255) NULL,
+        updated_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+    );
 END

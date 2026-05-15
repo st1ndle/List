@@ -44,3 +44,13 @@
     font-size: 42px;
   }
 }
+
+@media (max-width: 800px) {
+  .cat-top {
+    padding: 20px 18px 0;
+  }
+  
+  .filter-strip {
+    padding: 16px 18px;
+  }
+}

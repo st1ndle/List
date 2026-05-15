@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Button } from '../ui/Button';
+import { PhoneInput } from '../ui/PhoneInput';
 import './ContactRequestForm.css';
 
 function ContactRequestForm() {
+  const [phone, setPhone] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleSubmit = (event) => {
@@ -18,10 +20,12 @@ function ContactRequestForm() {
           <label className="flbl" htmlFor="contacts-name">Ваше имя</label>
           <input className="finp" id="contacts-name" placeholder="Иван Иванов" required />
         </div>
-        <div className="fg">
-          <label className="flbl" htmlFor="contacts-phone">Телефон</label>
-          <input className="finp" id="contacts-phone" placeholder="+7 (___) ___-__-__" required />
-        </div>
+        <PhoneInput
+          label="Телефон"
+          value={phone}
+          onChange={setPhone}
+          required
+        />
         <div className="fg">
           <label className="flbl" htmlFor="contacts-message">Комментарий</label>
           <textarea

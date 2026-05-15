@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ApiStorage from '../../api/ApiStorage';
 import { Button } from '../../components/ui/Button';
+import { PhoneInput } from '../../components/ui/PhoneInput';
 import useToastStore from '../../store/useToastStore';
 import './AuthFormContainer.css';
 
@@ -133,15 +134,11 @@ function AuthFormContainer() {
               />
             </div>
           ) : (
-            <div className="fg" id="l-phone-wrap">
-              <label className="flbl">Телефон</label>
-              <input
-                className="finp"
-                value={lPhone}
-                onChange={(e) => setLPhone(e.target.value)}
-                placeholder="+7 (___) ___-__-__"
-              />
-            </div>
+            <PhoneInput
+              label="Телефон"
+              value={lPhone}
+              onChange={(val) => setLPhone(val)}
+            />
           )}
 
           <div className="fg">
@@ -210,12 +207,10 @@ function AuthFormContainer() {
           </div>
 
           <div className="fg">
-            <label className="flbl">Телефон</label>
-            <input
-              className="finp"
+            <PhoneInput
+              label="Телефон"
               value={rPh}
-              onChange={(e) => setRPh(e.target.value)}
-              placeholder="+7 (___) ___-__-__"
+              onChange={(val) => setRPh(val)}
             />
           </div>
 

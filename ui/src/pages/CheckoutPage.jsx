@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useCartStore from '../store/useCartStore';
 import ApiStorage from '../api/ApiStorage';
+import { PhoneInput } from '../components/ui/PhoneInput';
 import './CheckoutPage.css';
 
 // ─── Утилиты ─────────────────────────────────────────────────────────────────
@@ -28,15 +29,6 @@ function buildTimeSlots(start, end) {
   return slots;
 }
 
-/** Форматирует телефон для отображения: 79001234567 → +7 (900) 123-45-67 */
-function formatPhone(raw) {
-  if (!raw) return '';
-  const d = String(raw).replace(/\D/g, '');
-  if (d.length === 11) {
-    return `+${d[0]} (${d.slice(1, 4)}) ${d.slice(4, 7)}-${d.slice(7, 9)}-${d.slice(9, 11)}`;
-  }
-  return raw;
-}
 
 // ─── Компонент ────────────────────────────────────────────────────────────────
 
@@ -82,7 +74,7 @@ function CheckoutPage() {
           setUser(u);
           setFirstName(u.first_name || '');
           setLastName(u.last_name || '');
-          setPhone(formatPhone(u.phone));
+          setPhone(u.phone || '');
         }
 
         const whs = Array.isArray(whRes) ? whRes : [];
@@ -337,16 +329,11 @@ function CheckoutPage() {
                 />
               </div>
             </div>
-            <div className="fg">
-              <label className="flbl" htmlFor="co-phone">Телефон</label>
-              <input
-                id="co-phone"
-                className="finp"
-                placeholder="+7 (___) ___-__-__"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
-            </div>
+            <PhoneInput
+              label="Телефон"
+              value={phone}
+              onChange={setPhone}
+            />
             <div className="fg">
               <label className="flbl" htmlFor="co-comment">Комментарий</label>
               <textarea

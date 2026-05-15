@@ -12,6 +12,8 @@
  */
 
 const sql = require('mssql'); // Библиотека для работы с Microsoft SQL Server
+const knexLib = require('knex');
+const knexConfig = require('../knexfile');
 
 /**
  * Объект конфигурации подключения к MSSQL.
@@ -36,6 +38,9 @@ const dbConfig = {
   },
 };
 
+// Инициализация Knex
+const knex = knexLib(knexConfig);
+
 // Переменная для хранения пула соединений (singleton-паттерн)
 let pool;
 
@@ -57,35 +62,24 @@ async function getPool() {
   return pool;
 }
 
-async function ensureSiteSettingsSchema() {
-  const currentPool = await getPool();
-
-  await currentPool.request().batch(`
-    IF OBJECT_ID('dbo.site_settings', 'U') IS NULL
-    BEGIN
-      CREATE TABLE dbo.site_settings (
-        [key] NVARCHAR(100) NOT NULL PRIMARY KEY,
-        [value] NVARCHAR(255) NOT NULL,
-        [label] NVARCHAR(255) NULL,
-        [updated_at] DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
-      );
-    END;
-
-    MERGE dbo.site_settings AS target
-    USING (VALUES
-      (N'stat_year', N'1998', N'Год основания'),
-      (N'stat_employees', N'150', N'Сотрудников'),
-      (N'stat_addresses', N'2000+', N'Адресов доставки в день'),
-      (N'stat_daily_cargo', N'500т', N'Грузов в сутки'),
-      (N'stat_pallets', N'17К', N'Паллетомест'),
-      (N'stat_transport', N'120', N'Единиц транспорта'),
-      (N'stat_warehouse_class', N'А', N'Класс склада')
-    ) AS source([key], [value], [label])
-    ON target.[key] = source.[key]
-    WHEN NOT MATCHED THEN
-      INSERT ([key], [value], [label], [updated_at])
-      VALUES (source.[key], source.[value], source.[label], SYSUTCDATETIME());
-  `);
+/**
+ * Запускает миграции базы данных.
+ * Проверяет текущую версию и применяет только недостающие файлы.
+ */
+async function runMigrations() {
+  console.log('[migrations] Checking for database updates...');
+  try {
+    const [batchNo, log] = await knex.migrate.latest();
+    if (log.length === 0) {
+      console.log('[migrations] Database is up to date.');
+    } else {
+      console.log(`[migrations] Successfully applied batch ${batchNo}. Migrations:`);
+      log.forEach(file => console.log(`  - ${file}`));
+    }
+  } catch (error) {
+    console.error('[migrations] Error during migration:', error);
+    throw error;
+  }
 }
 
 async function verifyDatabaseStartup() {
@@ -100,10 +94,12 @@ async function verifyDatabaseStartup() {
     throw new Error('MSSQL connection check returned an unexpected result.');
   }
 
-  await ensureSiteSettingsSchema();
+  // Запускаем миграции вместо ручного создания схем
+  await runMigrations();
+
   console.log(
-    `[startup] MSSQL connection OK and required schema is ready: ${dbConfig.server}:${dbConfig.port} / ${dbConfig.database}`
+    `[startup] MSSQL connection OK and all migrations applied: ${dbConfig.server}:${dbConfig.port} / ${dbConfig.database}`
   );
 }
 
-module.exports = { dbConfig, getPool, ensureSiteSettingsSchema, verifyDatabaseStartup };
+module.exports = { dbConfig, getPool, verifyDatabaseStartup, knex };

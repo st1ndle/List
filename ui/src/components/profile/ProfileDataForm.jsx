@@ -1,13 +1,21 @@
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Button } from '../ui/Button';
 import { InputField, FormRow } from '../ui/Form';
+import { PhoneInput } from '../ui/PhoneInput';
 import useToastStore from '../../store/useToastStore';
 
 function ProfileDataForm({ user, onSave }) {
+  const [phone, setPhone] = useState(user.phone || '');
+  const [firstName, setFirstName] = useState(user.name || '');
+  const [lastName, setLastName] = useState(user.lastname || '');
+  const [email, setEmail] = useState(user.email || '');
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    // In a real app, we'd pass these values to onSave
     if (onSave) {
-      onSave();
+      onSave({ name: firstName, lastname: lastName, phone, email });
     } else {
       useToastStore.getState().showToast('✓', 'Данные сохранены');
     }
@@ -18,13 +26,32 @@ function ProfileDataForm({ user, onSave }) {
       <div className="scard-title" style={{ marginBottom: '24px' }}>Личные данные</div>
       
       <FormRow>
-        <InputField label="Имя" defaultValue={user.name} placeholder="Иван" />
-        <InputField label="Фамилия" defaultValue={user.lastname} placeholder="Иванов" />
+        <InputField 
+          label="Имя" 
+          value={firstName} 
+          onChange={(e) => setFirstName(e.target.value)} 
+          placeholder="Иван" 
+        />
+        <InputField 
+          label="Фамилия" 
+          value={lastName} 
+          onChange={(e) => setLastName(e.target.value)} 
+          placeholder="Иванов" 
+        />
       </FormRow>
       
-      <InputField label="Телефон" defaultValue={user.phone} placeholder="+7 (___) ___-__-__" />
+      <PhoneInput 
+        label="Телефон" 
+        value={phone} 
+        onChange={setPhone} 
+      />
       
-      <InputField label="Почта" defaultValue={user.email} placeholder="name@company.ru" />
+      <InputField 
+        label="Почта" 
+        value={email} 
+        onChange={(e) => setEmail(e.target.value)} 
+        placeholder="name@company.ru" 
+      />
       
       <Button variant="solid" type="submit" style={{ padding: '12px 24px', fontSize: '14px', borderRadius: '10px' }}>
         Сохранить изменения

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import ProductGridContainer from '../containers/blocks/ProductGridContainer';
+import ProductGridContainer from '../features/catalogue/ProductGridContainer';
 import ApiStorage from '../api/ApiStorage';
 import './CataloguePage.css';
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useCartStore from '../store/useCartStore';
 import ApiStorage from '../api/ApiStorage';
+import useAuthStore from '../store/useAuthStore';
 import { PhoneInput } from '../components/ui/PhoneInput';
 import './CheckoutPage.css';
 
@@ -36,17 +37,21 @@ function CheckoutPage() {
   const navigate = useNavigate();
   const { items, clearCart } = useCartStore();
 
+  const user = useAuthStore((state) => state.user);
+  const isAuthLoading = useAuthStore((state) => state.isLoading);
+
   // ── Данные для формы
-  const [user, setUser]           = useState(null);
   const [warehouses, setWarehouses] = useState([]);
   const [products, setProducts]   = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError]         = useState('');
 
+  const today = new Date().toISOString().split('T')[0];
+
   // ── Выбор пользователя
   const [selWarehouse, setSelWarehouse] = useState(null);   // объект склада
-  const [selDate, setSelDate]     = useState('');
+  const [selDate, setSelDate]     = useState(today);
   const [selTime, setSelTime]     = useState('');
 
   // ── Контактные данные (предзаполняются из профиля)
@@ -55,27 +60,33 @@ function CheckoutPage() {
   const [phone, setPhone]         = useState('');
   const [comment, setComment]     = useState('');
 
-  const today = new Date().toISOString().split('T')[0];
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!isAuthLoading && !user) {
+      navigate('/auth?redirect=/checkout');
+    }
+  }, [user, isAuthLoading, navigate]);
+
+  // Pre-fill user data when user changes
+  useEffect(() => {
+    if (user) {
+      const timer = setTimeout(() => {
+        setFirstName(user.first_name || user.name || '');
+        setLastName(user.last_name || user.lastname || '');
+        setPhone(user.phone || '');
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
 
   // ── Загрузка при монтировании
   useEffect(() => {
-    setSelDate(today);
-
     const loadAll = async () => {
       try {
-        const [meRes, whRes, prodRes] = await Promise.all([
-          ApiStorage.auth.me().catch(() => ({ user: null })),
+        const [whRes, prodRes] = await Promise.all([
           ApiStorage.warehouses.getAll().catch(() => []),
           ApiStorage.catalog.getProducts().catch(() => []),
         ]);
-
-        const u = meRes?.user;
-        if (u) {
-          setUser(u);
-          setFirstName(u.first_name || '');
-          setLastName(u.last_name || '');
-          setPhone(u.phone || '');
-        }
 
         const whs = Array.isArray(whRes) ? whRes : [];
         setWarehouses(whs);
@@ -164,7 +175,7 @@ function CheckoutPage() {
   };
 
   // ── Loading-state
-  if (isLoading) {
+  if (isLoading || isAuthLoading) {
     return (
       <div className="co-page">
         <div style={{ padding: '36px 48px', color: 'var(--ink3)' }}>Загрузка...</div>

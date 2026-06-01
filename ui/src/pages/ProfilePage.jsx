@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ApiStorage from '../api/ApiStorage';
 import useToastStore from '../store/useToastStore';
+import useAuthStore from '../store/useAuthStore';
 
 // --- Подкомпонент: Личные данные ---
 const ProfileData = ({ user }) => {
@@ -214,23 +215,8 @@ const ProfileOrders = () => {
 // --- Главная страница Профиля ---
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('data'); // 'data', 'orders', 'security'
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const data = await ApiStorage.auth.me();
-        setUser(data?.user);
-      } catch (err) {
-        console.error("Ошибка загрузки пользователя", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, []);
+  const user = useAuthStore((state) => state.user);
+  const loading = useAuthStore((state) => state.isLoading);
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Загрузка профиля...</div>;
   if (!user) return <div style={{ padding: '40px', textAlign: 'center' }}>Пожалуйста, войдите в систему.</div>;

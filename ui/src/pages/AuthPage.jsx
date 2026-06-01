@@ -1,4 +1,4 @@
-import AuthFormContainer from '../containers/blocks/AuthFormContainer';
+import AuthFormContainer from '../features/auth/AuthFormContainer';
 import './AuthPage.css';
 
 function AuthPage() {

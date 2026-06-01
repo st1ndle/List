@@ -20,8 +20,9 @@ const useCartStore = create(
         const currentQty = state.items[id] || 0;
         const nextQty = currentQty + delta;
         if (nextQty <= 0) {
-          const { [id]: _, ...rest } = state.items;
-          return { items: rest };
+          const nextItems = { ...state.items };
+          delete nextItems[id];
+          return { items: nextItems };
         }
         return {
           items: {
@@ -32,8 +33,9 @@ const useCartStore = create(
       }),
 
       removeFromCart: (id) => set((state) => {
-        const { [id]: _, ...rest } = state.items;
-        return { items: rest };
+        const nextItems = { ...state.items };
+        delete nextItems[id];
+        return { items: nextItems };
       }),
 
       clearCart: () => set({ items: {} }),

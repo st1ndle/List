@@ -29,6 +29,7 @@
  * @returns {{ error: string } | null}
  */
 function validateRegister({ firstName, phone, email, password }) {
+  // TODO: Добавить валидацию формата номера телефона
   // Имя обязательно
   if (!firstName || !firstName.trim()) {
     return { error: 'Поле "Имя" обязательно' };

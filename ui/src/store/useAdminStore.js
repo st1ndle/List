@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import ApiStorage from '../api/ApiStorage';
 
-const useAdminStore = create((set, get) => ({
+const useAdminStore = create((set) => ({
   warehouses: [],
   isLoading: false,
   error: null,

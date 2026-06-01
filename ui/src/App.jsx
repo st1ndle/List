@@ -1,5 +1,6 @@
+import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import HeaderContainer from './components/header/HeaderContainer';
+import HeaderContainer from './features/layout/header/HeaderContainer';
 import Toast from './components/ui/Toast';
 import HomePage from './pages/HomePage';
 import CataloguePage from './pages/CataloguePage';
@@ -13,9 +14,16 @@ import OrdersPage from './pages/OrdersPage';
 import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
+import useAuthStore from './store/useAuthStore';
 import './App.css';
 
 function App() {
+  const checkAuth = useAuthStore((state) => state.checkAuth);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
   return (
     <main className="app-root">
       <HeaderContainer />

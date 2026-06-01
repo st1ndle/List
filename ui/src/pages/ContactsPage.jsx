@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import SectionHeading from '../components/site/SectionHeading';
-import ContactRequestForm from '../components/site/ContactRequestForm';
+import SectionHeading from '../features/site/SectionHeading';
+import ContactRequestForm from '../features/site/ContactRequestForm';
 import useWarehouseStore from '../store/useWarehouseStore';
 import './ContactsPage.css';
 

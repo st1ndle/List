@@ -82,7 +82,10 @@ router.post('/', async (req, res) => {
       .input('end',    sql.Time,     working_hours_end   || null)
       .input('active', sql.Bit,      is_active !== undefined ? (is_active ? 1 : 0) : 1)
       .query(`
+        DECLARE @inserted TABLE (id UNIQUEIDENTIFIER);
+
         INSERT INTO warehouses (warehouse_code, name, city, address, phone, working_hours_start, working_hours_end, is_active)
+        OUTPUT INSERTED.id INTO @inserted
         VALUES (@code, @name, @city, @addr, @phone, @start, @end, @active);
 
         SELECT id, warehouse_code, name, city, address, phone,
@@ -90,7 +93,7 @@ router.post('/', async (req, res) => {
                CONVERT(varchar(5), working_hours_end, 108) as working_hours_end,
                is_active, created_at, updated_at
         FROM warehouses
-        WHERE id = SCOPE_IDENTITY() OR id = (SELECT TOP 1 id FROM warehouses ORDER BY created_at DESC);
+        WHERE id = (SELECT id FROM @inserted);
       `);
     res.status(201).json(result.recordset[0]);
   } catch (e) {

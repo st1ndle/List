@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
-import SectionHeading from '../components/site/SectionHeading';
-import ServiceCard from '../components/site/ServiceCard';
-import SiteFooter from '../components/site/SiteFooter';
-import HeroContainer from '../containers/blocks/HeroContainer';
+import SectionHeading from '../features/site/SectionHeading';
+import ServiceCard from '../features/site/ServiceCard';
+import SiteFooter from '../features/layout/footer/SiteFooter';
+import HeroContainer from '../features/site/HeroContainer';
 import ApiStorage from '../api/ApiStorage';
 import useSiteSettingsStore from '../store/useSiteSettingsStore';
 import './HomePage.css';

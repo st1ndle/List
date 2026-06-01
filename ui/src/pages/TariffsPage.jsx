@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import SectionHeading from '../components/site/SectionHeading';
-import TariffCard from '../components/site/TariffCard';
+import SectionHeading from '../features/site/SectionHeading';
+import TariffCard from '../features/site/TariffCard';
 import './TariffsPage.css';
 
 const tariffs = [

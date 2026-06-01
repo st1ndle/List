@@ -1,12 +1,12 @@
-import React, { Component, useEffect, useState } from 'react';
+import { Component } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ApiStorage from '../api/ApiStorage';
 import useAdminStore from '../store/useAdminStore';
-import AdminOrders from '../components/admin/AdminOrders';
-import AdminWarehouses from '../components/admin/AdminWarehouses';
-import AdminCategories from '../components/admin/AdminCategories';
-import AdminProducts from '../components/admin/AdminProducts';
-import AdminSettings from '../components/admin/AdminSettings';
+import useAuthStore from '../store/useAuthStore';
+import AdminOrders from '../features/admin/AdminOrders';
+import AdminWarehouses from '../features/admin/AdminWarehouses';
+import AdminCategories from '../features/admin/AdminCategories';
+import AdminProducts from '../features/admin/AdminProducts';
+import AdminSettings from '../features/admin/AdminSettings';
 import './AdminPage.css';
 
 /**
@@ -17,26 +17,13 @@ function withAdminContext(WrappedComponent) {
   return function AdminContextWrapper(props) {
     const navigate = useNavigate();
     const store = useAdminStore();
-    const [user, setUser] = useState(null);
-    const [authLoading, setAuthLoading] = useState(true);
-
-    useEffect(() => {
-      ApiStorage.auth.me()
-        .then(res => {
-          if (res && res.user && res.user.role === 'admin') {
-            setUser(res.user);
-          } else {
-            setUser(null);
-          }
-        })
-        .catch(() => setUser(null))
-        .finally(() => setAuthLoading(false));
-    }, []);
+    const user = useAuthStore((state) => state.user);
+    const authLoading = useAuthStore((state) => state.isLoading);
 
     if (authLoading) return <div className="admin-loading">Загрузка...</div>;
     
     // Если пользователь не админ - показываем "404"
-    if (!user) {
+    if (!user || user.role !== 'admin') {
       return (
         <div className="not-found-page">
           <h1>404</h1>

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import SectionHeading from '../components/site/SectionHeading';
-import ServiceCard from '../components/site/ServiceCard';
+import SectionHeading from '../features/site/SectionHeading';
+import ServiceCard from '../features/site/ServiceCard';
 import './ServicesPage.css';
 
 const services = [

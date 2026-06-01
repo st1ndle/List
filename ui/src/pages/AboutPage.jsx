@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import SectionHeading from '../components/site/SectionHeading';
+import SectionHeading from '../features/site/SectionHeading';
 import useWarehouseStore from '../store/useWarehouseStore';
 import useSiteSettingsStore from '../store/useSiteSettingsStore';
 import './AboutPage.css';

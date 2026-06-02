@@ -17,6 +17,8 @@ const express    = require('express');
 const session    = require('express-session'); // Middleware для управления сессиями
 const MSSQLStore = require('connect-mssql-v2'); // Хранилище сессий в MSSQL вместо памяти
 const cors       = require('cors');             // Cross-Origin Resource Sharing
+const helmet     = require('helmet');           // Набор middleware для защиты HTTP-заголовков
+const rateLimit  = require('express-rate-limit'); // Ограничение частоты запросов для защиты от DDoS/brute-force
 
 // Наши собственные модули
 const { dbConfig }       = require('./config/db');
@@ -32,6 +34,36 @@ const settingsRoutes       = require('./routes/settings.routes');
 const adminSettingsRoutes  = require('./routes/admin/settings.routes');
 
 const app = express();
+
+// ── Настройка защиты заголовков (Helmet) ────────────────────────────────────
+// Отключаем CSP для API-сервера, так как за политику CSP для фронтенда отвечает Nginx
+app.use(helmet({
+  contentSecurityPolicy: false,
+}));
+
+// ── Ограничение частоты запросов (Rate Limiting) ──────────────────────────────
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 минут
+  max: 1000,                // Лимит 1000 запросов с одного IP за 15 минут
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests from this IP, please try again later.' }
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 минут
+  max: 50,                  // Лимит 50 запросов (авторизация/регистрация) с одного IP за 15 минут
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many authentication attempts, please try again after 15 minutes.' }
+});
+
+// Применяем общий лимитер ко всем API запросам
+app.use('/api', generalLimiter);
+
+// Применяем строгий лимитер к путям авторизации
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
 
 // ── Основные middleware ──────────────────────────────────────────────────────
 //

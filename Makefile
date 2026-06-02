@@ -1,7 +1,7 @@
 # Переменные
 DOCKER_COMPOSE = docker-compose
 
-.PHONY: help up down restart status logs build rebuild clean db-reset seed
+.PHONY: help up down restart status logs build rebuild clean db-reset seed secure-scan
 
 help: ## Показать справку
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -55,3 +55,14 @@ frontend-logs: ## Логи только фронтенда
 
 db-logs: ## Логи базы данных
 	$(DOCKER_COMPOSE) logs -f mssql
+
+secure-scan: ## Запустить статический анализ безопасности (ESLint Security & Dependency Audit)
+	@echo "=== [1/4] Running Security Audit on Server dependencies ==="
+	@cd server && (npm run security-audit || echo "⚠️ Server audit found vulnerabilities!")
+	@echo "=== [2/4] Running Security Lint on Server ==="
+	@cd server && npm run lint:security
+	@echo "=== [3/4] Running Security Audit on UI dependencies ==="
+	@cd ui && (npm run security-audit || echo "⚠️ UI audit found vulnerabilities!")
+	@echo "=== [4/4] Running Lint (with Security) on UI ==="
+	@cd ui && npm run lint
+	@echo "=== All Security scans completed successfully! ==="

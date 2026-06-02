@@ -15,20 +15,22 @@ COPY . .
 RUN npm run build
 
 # --- Stage 2: Serve ---
-FROM nginx:stable-alpine
+FROM nginxinc/nginx-unprivileged:stable-alpine
 WORKDIR /usr/share/nginx/html
 
 # Clean default nginx files
+USER root
 RUN rm -rf ./*
+USER 101
 
-# Copy built files from build stage
-COPY --from=build /app/dist .
+# Copy built files from build stage and assign ownership to unprivileged user (101)
+COPY --chown=101:101 --from=build /app/dist .
 
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose port 80
-EXPOSE 80
+# Expose port 8080
+EXPOSE 8080
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]

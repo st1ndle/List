@@ -3,40 +3,92 @@ package com.list.mobile.data.remote
 import retrofit2.http.*
 import retrofit2.Response
 
-data class AuthRequest(val email: String, val password: String, val name: String? = null)
-data class AuthResponse(val token: String, val user: User)
-data class User(val id: String, val email: String, val name: String?)
+data class LoginRequest(val login: String, val password: String)
+data class RegisterRequest(val firstName: String, val email: String, val password: String)
+data class AuthResponse(val status: String, val userId: String?)
 
 data class Category(val id: String, val name: String)
-data class Product(val id: String, val name: String, val description: String?, val price: Double, val image_url: String?, val category_id: String)
-data class Warehouse(val id: String, val address: String, val working_hours: String?)
 
-data class OrderItemRequest(val product_id: String, val quantity: Int)
-data class OrderRequest(val warehouse_id: String, val pickup_time: String, val items: List<OrderItemRequest>)
-data class OrderResponse(val order_id: String, val status: String)
+data class Product(
+    val id: String,
+    val name: String,
+    val price: Double,
+    val category_id: String = "",
+    val brand: String = "",
+    val unit_name: String = "",
+    val description: String? = null,
+    val emoji: String? = null,
+    val bg_color: String? = null,
+    val badge: String? = null
+)
 
-data class HistoryItem(val product_id: String, val name: String, val quantity: Int, val price: Double)
-data class HistoryOrder(val order_id: String, val status: String, val total_price: Double, val date: String, val items: List<HistoryItem>)
+data class Warehouse(
+    val id: String,
+    val warehouse_code: String,
+    val name: String,
+    val city: String,
+    val address: String,
+    val phone: String?,
+    val working_hours_start: String?,
+    val working_hours_end: String?,
+    val is_active: Int
+)
+
+data class OrderItemRequest(
+    val id: String,
+    val quantity: Int,
+    val price_at_purchase: Double
+)
+
+data class OrderRequest(
+    val warehouse_code: String?,
+    val items: List<OrderItemRequest>,
+    val total_amount: Double,
+    val comment: String? = null
+)
+
+data class OrderResponse(val status: String, val order_id: String)
+
+data class HistoryItem(
+    val id: String,
+    val name: String,
+    val q: Int,
+    val price: Double,
+    val emoji: String?
+)
+
+data class HistoryOrder(
+    val id: String,
+    val public_id: String,
+    val status: String,
+    val total_amount: Double,
+    val created_at: String,
+    val items: List<HistoryItem>
+)
 
 interface ApiService {
-    @POST("auth/register")
-    suspend fun register(@Body request: AuthRequest): Response<AuthResponse>
+    @POST("api/auth/register")
+    suspend fun register(@Body request: RegisterRequest): Response<AuthResponse>
 
-    @POST("auth/login")
-    suspend fun login(@Body request: AuthRequest): Response<AuthResponse>
+    @POST("api/auth/login")
+    suspend fun login(@Body request: LoginRequest): Response<AuthResponse>
 
-    @GET("catalog/categories")
+    @POST("api/auth/logout")
+    suspend fun logout(): Response<AuthResponse>
+
+    @GET("categories")
     suspend fun getCategories(): Response<List<Category>>
 
-    @GET("catalog/products")
-    suspend fun getProducts(@Query("category") categoryId: String? = null): Response<List<Product>>
+    @GET("products")
+    suspend fun getProducts(@Query("category_id") categoryId: String? = null): Response<List<Product>>
 
-    @GET("warehouses")
+    @GET("api/warehouses")
     suspend fun getWarehouses(): Response<List<Warehouse>>
 
-    @POST("orders")
+    @POST("api/orders")
     suspend fun createOrder(@Body request: OrderRequest): Response<OrderResponse>
 
-    @GET("orders/history")
+    @GET("api/orders")
     suspend fun getOrderHistory(): Response<List<HistoryOrder>>
 }
+

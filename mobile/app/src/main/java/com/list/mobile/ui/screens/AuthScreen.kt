@@ -9,7 +9,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import com.list.mobile.data.remote.AuthRequest
+import com.list.mobile.data.remote.LoginRequest
+import com.list.mobile.data.remote.RegisterRequest
 import com.list.mobile.data.repository.AppRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -26,10 +27,13 @@ class AuthViewModel @Inject constructor(private val repo: AppRepository) : ViewM
     fun authenticate(onSuccess: () -> Unit) {
         viewModelScope.launch {
             try {
-                val req = AuthRequest(email, password, if (isRegister) name else null)
-                val response = if (isRegister) repo.register(req) else repo.login(req)
+                val response = if (isRegister) {
+                    repo.register(RegisterRequest(firstName = name, email = email, password = password))
+                } else {
+                    repo.login(LoginRequest(login = email, password = password))
+                }
                 if (response.isSuccessful && response.body() != null) {
-                    repo.saveToken(response.body()!!.token)
+                    repo.saveToken(response.body()!!.userId ?: "")
                     onSuccess()
                 } else {
                     error = "Ошибка: ${response.code()}"

@@ -28,7 +28,7 @@ class AppRepository @Inject constructor(
     suspend fun getOrderHistory() = api.getOrderHistory()
 
     suspend fun addToCart(product: Product) {
-        cartDao.insertItem(CartEntity(product.id, product.name, product.price, 1, product.image_url))
+        cartDao.insertItem(CartEntity(product.id, product.name, product.price, 1, product.emoji, product.bg_color))
     }
     suspend fun updateCartQuantity(productId: String, change: Int) {
         cartDao.updateQuantity(productId, change)
@@ -38,5 +38,13 @@ class AppRepository @Inject constructor(
     }
     suspend fun clearCart() {
         cartDao.clearCart()
+    }
+    suspend fun logout() {
+        try {
+            api.logout()
+        } catch (e: Exception) {
+            // Игнорируем сетевые ошибки при логауте
+        }
+        tokenManager.clearToken()
     }
 }

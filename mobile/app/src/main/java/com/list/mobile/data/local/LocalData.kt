@@ -32,7 +32,8 @@ data class CartEntity(
     val name: String,
     val price: Double,
     val quantity: Int,
-    val imageUrl: String?
+    val emoji: String?,
+    val bg_color: String?
 )
 
 @Dao

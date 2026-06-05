@@ -13,12 +13,54 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
+import okhttp3.Cookie
+import okhttp3.CookieJar
+import okhttp3.HttpUrl
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
+
+class MemoryCookieJar : CookieJar {
+    private val cookieStore = HashMap<String, List<Cookie>>()
+
+    override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
+        cookieStore[url.host] = cookies
+    }
+
+    override fun loadForRequest(url: HttpUrl): List<Cookie> {
+        return cookieStore[url.host] ?: ArrayList()
+    }
+}
+
+class DynamicBaseUrlInterceptor : Interceptor {
+    @Volatile
+    private var currentHost = "127.0.0.1"
+
+    override fun intercept(chain: Interceptor.Chain): okhttp3.Response {
+        val request = chain.request()
+        val originalUrl = request.url
+
+        if (originalUrl.host == "127.0.0.1" || originalUrl.host == "10.0.2.2") {
+            val newUrl = originalUrl.newBuilder().host(currentHost).build()
+            val newRequest = request.newBuilder().url(newUrl).build()
+            try {
+                return chain.proceed(newRequest)
+            } catch (e: java.io.IOException) {
+                // Если текущий хост недоступен, переключаемся на альтернативный и пробуем снова
+                val fallbackHost = if (currentHost == "127.0.0.1") "10.0.2.2" else "127.0.0.1"
+                currentHost = fallbackHost
+                
+                val fallbackUrl = originalUrl.newBuilder().host(fallbackHost).build()
+                val fallbackRequest = request.newBuilder().url(fallbackUrl).build()
+                return chain.proceed(fallbackRequest)
+            }
+        }
+        return chain.proceed(request)
+    }
+}
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -41,8 +83,10 @@ object AppModule {
             chain.proceed(request.build())
         }
         return OkHttpClient.Builder()
+            .addInterceptor(DynamicBaseUrlInterceptor())
             .addInterceptor(logging)
             .addInterceptor(authInterceptor)
+            .cookieJar(MemoryCookieJar())
             .build()
     }
 
@@ -50,8 +94,7 @@ object AppModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            // Используем 10.0.2.2 для обращения к localhost компьютера из эмулятора Android
-            .baseUrl("http://10.0.2.2:8080/api/") 
+            .baseUrl("http://127.0.0.1:8080/") 
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -70,3 +113,4 @@ object AppModule {
     @Provides
     fun provideCartDao(db: AppDatabase): CartDao = db.cartDao()
 }
+

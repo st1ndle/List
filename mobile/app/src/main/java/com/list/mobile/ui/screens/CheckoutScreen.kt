@@ -41,9 +41,10 @@ class CheckoutViewModel @Inject constructor(private val repo: AppRepository) : V
             val cart = repo.cartItems.first()
             if (selectedWarehouse != null && pickupTime.isNotBlank() && cart.isNotEmpty()) {
                 val req = OrderRequest(
-                    warehouse_id = selectedWarehouse!!.id,
-                    pickup_time = pickupTime,
-                    items = cart.map { OrderItemRequest(it.productId, it.quantity) }
+                    warehouse_code = selectedWarehouse!!.warehouse_code,
+                    total_amount = cart.sumOf { it.price * it.quantity },
+                    comment = "Самовывоз. Время получения: $pickupTime",
+                    items = cart.map { OrderItemRequest(id = it.productId, quantity = it.quantity, price_at_purchase = it.price) }
                 )
                 try {
                     val res = repo.createOrder(req)
@@ -90,3 +91,4 @@ fun CheckoutScreen(navController: NavController, viewModel: CheckoutViewModel = 
         }
     }
 }
+

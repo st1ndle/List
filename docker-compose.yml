@@ -40,6 +40,8 @@ services:
       - DB_PASSWORD=${SA_PASSWORD}
       - DB_NAME=${DB_NAME}
       - PORT=8080
+    volumes:
+      - ./sql:/sql:ro
     depends_on:
       mssql:
         condition: service_healthy

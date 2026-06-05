@@ -1,23 +1,54 @@
 package com.list.mobile.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
 import com.list.mobile.data.remote.Category
 import com.list.mobile.data.remote.Product
 import com.list.mobile.data.repository.AppRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+fun parseHtmlColor(colorStr: String?): Color {
+    val defaultColor = Color(red = 0x1A, green = 0x4A, blue = 0x6B, alpha = 0x12)
+    if (colorStr.isNullOrBlank()) return defaultColor
+    return try {
+        if (colorStr.startsWith("#")) {
+            Color(android.graphics.Color.parseColor(colorStr))
+        } else if (colorStr.startsWith("rgba")) {
+            val parts = colorStr.substringAfter("(").substringBefore(")").split(",")
+            val r = parts[0].trim().toInt()
+            val g = parts[1].trim().toInt()
+            val b = parts[2].trim().toInt()
+            val alpha = parts[3].trim().toFloat()
+            Color(r, g, b, (alpha * 255).toInt())
+        } else if (colorStr.startsWith("rgb")) {
+            val parts = colorStr.substringAfter("(").substringBefore(")").split(",")
+            val r = parts[0].trim().toInt()
+            val g = parts[1].trim().toInt()
+            val b = parts[2].trim().toInt()
+            Color(r, g, b)
+        } else {
+            defaultColor
+        }
+    } catch (e: Exception) {
+        defaultColor
+    }
+}
 
 @HiltViewModel
 class CatalogViewModel @Inject constructor(private val repo: AppRepository) : ViewModel() {
@@ -54,7 +85,7 @@ class CatalogViewModel @Inject constructor(private val repo: AppRepository) : Vi
     }
     
     fun logout() {
-        viewModelScope.launch { repo.clearToken() }
+        viewModelScope.launch { repo.logout() }
     }
 }
 
@@ -88,13 +119,41 @@ fun CatalogScreen(navController: NavController, viewModel: CatalogViewModel = hi
             LazyColumn {
                 items(viewModel.products) { product ->
                     Card(modifier = Modifier.padding(8.dp).fillMaxWidth()) {
-                        Row(Modifier.padding(8.dp)) {
-                            AsyncImage(model = product.image_url, contentDescription = null, modifier = Modifier.size(80.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Column {
+                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .background(
+                                        color = parseHtmlColor(product.bg_color),
+                                        shape = RoundedCornerShape(12.dp)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = product.emoji ?: "📦",
+                                    style = TextStyle(fontSize = 40.sp)
+                                )
+                            }
+                            Spacer(Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                if (!product.badge.isNullOrBlank()) {
+                                    SuggestionChip(
+                                        onClick = {},
+                                        label = { Text(product.badge, fontSize = 10.sp) },
+                                        modifier = Modifier.height(24.dp).padding(bottom = 4.dp)
+                                    )
+                                }
+                                Text(product.brand, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                                 Text(product.name, style = MaterialTheme.typography.titleMedium)
-                                Text("${product.price} ₽", style = MaterialTheme.typography.bodyLarge)
-                                Button(onClick = { viewModel.addToCart(product) }) { Text("В корзину") }
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = "${product.price} ₽ / ${product.unit_name}",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Button(onClick = { viewModel.addToCart(product) }) {
+                                Text("В корзину")
                             }
                         }
                     }
@@ -103,3 +162,4 @@ fun CatalogScreen(navController: NavController, viewModel: CatalogViewModel = hi
         }
     }
 }
+

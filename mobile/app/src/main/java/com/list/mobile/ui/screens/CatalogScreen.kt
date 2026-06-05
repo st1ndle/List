@@ -24,7 +24,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 fun parseHtmlColor(colorStr: String?): Color {
-    if (colorStr.isNullOrBlank()) return Color(0x121A4A6B)
+    val defaultColor = Color(red = 0x1A, green = 0x4A, blue = 0x6B, alpha = 0x12)
+    if (colorStr.isNullOrBlank()) return defaultColor
     return try {
         if (colorStr.startsWith("#")) {
             Color(android.graphics.Color.parseColor(colorStr))
@@ -42,10 +43,10 @@ fun parseHtmlColor(colorStr: String?): Color {
             val b = parts[2].trim().toInt()
             Color(r, g, b)
         } else {
-            Color(0x121A4A6B)
+            defaultColor
         }
     } catch (e: Exception) {
-        Color(0x121A4A6B)
+        defaultColor
     }
 }
 

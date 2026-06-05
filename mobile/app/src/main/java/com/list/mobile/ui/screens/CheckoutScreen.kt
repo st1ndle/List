@@ -23,20 +23,37 @@ class CheckoutViewModel @Inject constructor(private val repo: AppRepository) : V
     var warehouses by mutableStateOf<List<Warehouse>>(emptyList())
     var selectedWarehouse by mutableStateOf<Warehouse?>(null)
     var pickupTime by mutableStateOf("")
+    var error by mutableStateOf<String?>(null)
+    var isLoading by mutableStateOf(false)
+    var isSubmitting by mutableStateOf(false)
 
     init {
+        loadWarehouses()
+    }
+
+    fun loadWarehouses() {
+        error = null
+        isLoading = true
         viewModelScope.launch {
             try {
                 val res = repo.getWarehouses()
                 if (res.isSuccessful) {
                     warehouses = res.body() ?: emptyList()
                     selectedWarehouse = warehouses.firstOrNull()
+                } else {
+                    error = "Ошибка загрузки пунктов выдачи: ${res.code()}"
                 }
-            } catch (e: Exception) {}
+            } catch (e: Exception) {
+                error = "Ошибка подключения: ${e.localizedMessage ?: e.message}"
+            } finally {
+                isLoading = false
+            }
         }
     }
 
     fun submitOrder(onSuccess: () -> Unit) {
+        error = null
+        isSubmitting = true
         viewModelScope.launch {
             val cart = repo.cartItems.first()
             if (selectedWarehouse != null && pickupTime.isNotBlank() && cart.isNotEmpty()) {
@@ -51,8 +68,23 @@ class CheckoutViewModel @Inject constructor(private val repo: AppRepository) : V
                     if (res.isSuccessful) {
                         repo.clearCart()
                         onSuccess()
+                    } else {
+                        error = "Ошибка оформления заказа: ${res.code()}"
                     }
-                } catch (e: Exception) {}
+                } catch (e: Exception) {
+                    error = "Ошибка отправки заказа: ${e.localizedMessage ?: e.message}"
+                } finally {
+                    isSubmitting = false
+                }
+            } else {
+                isSubmitting = false
+                if (cart.isEmpty()) {
+                    error = "Корзина пуста"
+                } else if (selectedWarehouse == null) {
+                    error = "Выберите пункт выдачи"
+                } else if (pickupTime.isBlank()) {
+                    error = "Укажите время получения"
+                }
             }
         }
     }
@@ -84,9 +116,31 @@ fun CheckoutScreen(navController: NavController, viewModel: CheckoutViewModel = 
                 label = { Text("Время получения (например: 14:00)") },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(Modifier.height(32.dp))
-            Button(onClick = { viewModel.submitOrder { navController.navigate("catalog") { popUpTo(0) } } }, modifier = Modifier.fillMaxWidth()) {
+            
+            Spacer(Modifier.height(16.dp))
+            
+            viewModel.error?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(vertical = 8.dp))
+            }
+            
+            if (viewModel.isLoading || viewModel.isSubmitting) {
+                CircularProgressIndicator(modifier = Modifier.padding(vertical = 8.dp))
+            }
+            
+            Spacer(Modifier.height(16.dp))
+            Button(
+                onClick = { viewModel.submitOrder { navController.navigate("catalog") { popUpTo(0) } } }, 
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !viewModel.isLoading && !viewModel.isSubmitting
+            ) {
                 Text("Подтвердить заказ")
+            }
+            
+            if (viewModel.error != null && viewModel.warehouses.isEmpty() && !viewModel.isLoading) {
+                Spacer(Modifier.height(8.dp))
+                Button(onClick = { viewModel.loadWarehouses() }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Повторить загрузку складов")
+                }
             }
         }
     }

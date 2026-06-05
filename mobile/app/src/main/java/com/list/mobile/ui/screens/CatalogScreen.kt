@@ -55,28 +55,50 @@ class CatalogViewModel @Inject constructor(private val repo: AppRepository) : Vi
     var categories by mutableStateOf<List<Category>>(emptyList())
     var products by mutableStateOf<List<Product>>(emptyList())
     var selectedCategory by mutableStateOf<String?>(null)
+    var error by mutableStateOf<String?>(null)
+    var isLoading by mutableStateOf(false)
 
     init {
         loadData()
     }
 
-    private fun loadData() {
+    fun loadData() {
+        error = null
+        isLoading = true
         viewModelScope.launch {
             try {
                 val catRes = repo.getCategories()
-                if (catRes.isSuccessful) categories = catRes.body() ?: emptyList()
-                loadProducts()
-            } catch (e: Exception) { /* Handle error */ }
+                if (catRes.isSuccessful) {
+                    categories = catRes.body() ?: emptyList()
+                    loadProducts()
+                } else {
+                    error = "Ошибка загрузки категорий: ${catRes.code()}"
+                    isLoading = false
+                }
+            } catch (e: Exception) {
+                error = "Ошибка подключения: ${e.localizedMessage ?: e.message}"
+                isLoading = false
+            }
         }
     }
 
     fun loadProducts(categoryId: String? = selectedCategory) {
         selectedCategory = categoryId
+        error = null
+        isLoading = true
         viewModelScope.launch {
             try {
                 val res = repo.getProducts(categoryId)
-                if (res.isSuccessful) products = res.body() ?: emptyList()
-            } catch (e: Exception) { /* Handle error */ }
+                if (res.isSuccessful) {
+                    products = res.body() ?: emptyList()
+                } else {
+                    error = "Ошибка загрузки товаров: ${res.code()}"
+                }
+            } catch (e: Exception) {
+                error = "Ошибка подключения: ${e.localizedMessage ?: e.message}"
+            } finally {
+                isLoading = false
+            }
         }
     }
 
@@ -116,44 +138,62 @@ fun CatalogScreen(navController: NavController, viewModel: CatalogViewModel = hi
                     Tab(selected = viewModel.selectedCategory == cat.id, onClick = { viewModel.loadProducts(cat.id) }, text = { Text(cat.name) })
                 }
             }
-            LazyColumn {
-                items(viewModel.products) { product ->
-                    Card(modifier = Modifier.padding(8.dp).fillMaxWidth()) {
-                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(80.dp)
-                                    .background(
-                                        color = parseHtmlColor(product.bg_color),
-                                        shape = RoundedCornerShape(12.dp)
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = product.emoji ?: "📦",
-                                    style = TextStyle(fontSize = 40.sp)
-                                )
-                            }
-                            Spacer(Modifier.width(16.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                if (!product.badge.isNullOrBlank()) {
-                                    SuggestionChip(
-                                        onClick = {},
-                                        label = { Text(product.badge, fontSize = 10.sp) },
-                                        modifier = Modifier.height(24.dp).padding(bottom = 4.dp)
-                                    )
+            
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (viewModel.isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                } else if (viewModel.error != null) {
+                    Column(
+                        modifier = Modifier.align(Alignment.Center).padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(viewModel.error ?: "", color = MaterialTheme.colorScheme.error)
+                        Spacer(Modifier.height(8.dp))
+                        Button(onClick = { viewModel.loadData() }) {
+                            Text("Повторить")
+                        }
+                    }
+                } else {
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        items(viewModel.products) { product ->
+                            Card(modifier = Modifier.padding(8.dp).fillMaxWidth()) {
+                                Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(80.dp)
+                                            .background(
+                                                color = parseHtmlColor(product.bg_color),
+                                                shape = RoundedCornerShape(12.dp)
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = product.emoji ?: "📦",
+                                            style = TextStyle(fontSize = 40.sp)
+                                        )
+                                    }
+                                    Spacer(Modifier.width(16.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        if (!product.badge.isNullOrBlank()) {
+                                            SuggestionChip(
+                                                onClick = {},
+                                                label = { Text(product.badge, fontSize = 10.sp) },
+                                                modifier = Modifier.height(24.dp).padding(bottom = 4.dp)
+                                            )
+                                        }
+                                        Text(product.brand, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                        Text(product.name, style = MaterialTheme.typography.titleMedium)
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            text = "${product.price} ₽ / ${product.unit_name}",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    Button(onClick = { viewModel.addToCart(product) }) {
+                                        Text("В корзину")
+                                    }
                                 }
-                                Text(product.brand, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                                Text(product.name, style = MaterialTheme.typography.titleMedium)
-                                Spacer(Modifier.height(4.dp))
-                                Text(
-                                    text = "${product.price} ₽ / ${product.unit_name}",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            Button(onClick = { viewModel.addToCart(product) }) {
-                                Text("В корзину")
                             }
                         }
                     }

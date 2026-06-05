@@ -18,8 +18,8 @@ class AppRepository @Inject constructor(
     suspend fun saveToken(token: String) = tokenManager.saveToken(token)
     suspend fun clearToken() = tokenManager.clearToken()
 
-    suspend fun login(req: AuthRequest) = api.login(req)
-    suspend fun register(req: AuthRequest) = api.register(req)
+    suspend fun login(req: LoginRequest) = api.login(req)
+    suspend fun register(req: RegisterRequest) = api.register(req)
 
     suspend fun getCategories() = api.getCategories()
     suspend fun getProducts(categoryId: String? = null) = api.getProducts(categoryId)

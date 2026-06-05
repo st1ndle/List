@@ -35,6 +35,10 @@ const adminSettingsRoutes  = require('./routes/admin/settings.routes');
 
 const app = express();
 
+// Доверяем обратному прокси (Nginx) для определения реального IP клиента в rate limiter
+// и корректной работы secure cookie через HTTPS
+app.set('trust proxy', 1);
+
 // ── Настройка защиты заголовков (Helmet) ────────────────────────────────────
 // Отключаем CSP для API-сервера, так как за политику CSP для фронтенда отвечает Nginx
 app.use(helmet({
@@ -70,9 +74,38 @@ app.use('/api/auth/register', authLimiter);
 // Middleware выполняются последовательно в порядке регистрации через app.use().
 // Каждый из них может модифицировать req/res или завершить цепочку вызовом res.json().
 
-// CORS: разрешает запросы с любого origin (домена) и пропускает cookie.
-// origin: true — зеркалит реальный origin запроса, что нужно для credentials.
-app.use(cors({ origin: true, credentials: true }));
+// CORS: разрешает запросы только с доверенных источников и пропускает cookie.
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
+if (allowedOrigins.length === 0) {
+  allowedOrigins.push(
+    'http://localhost',
+    'http://localhost:80',
+    'http://localhost:5173',
+    'http://localhost:8080',
+    'http://localhost:3000',
+    'http://127.0.0.1',
+    'http://127.0.0.1:80',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:8080',
+    'http://127.0.0.1:3000'
+  );
+}
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Разрешаем запросы без origin (например, внутренние или curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true
+}));
 
 // Парсер JSON-тела запроса: наполняет req.body объектом из входящего JSON.
 // Без него req.body был бы undefined для POST/PUT запросов.
@@ -80,6 +113,26 @@ app.use(express.json());
 
 // Наш кастомный логгер — выводит в консоль метод, URL и тело каждого запроса.
 app.use(logger);
+
+// Middleware для предотвращения утечки деталей внутренних ошибок (SQL, стек вызовов и т.д.) в production.
+// Перехватывает все вызовы res.json() с кодом 500 и заменяет сообщения об ошибках на безопасные универсальные.
+app.use((req, res, next) => {
+  const originalJson = res.json;
+  res.json = function (body) {
+    if (res.statusCode === 500 && body) {
+      if (process.env.NODE_ENV === 'production') {
+        if (body.error && body.error !== 'Logout failed') {
+          body.error = 'Внутренняя ошибка сервера';
+        }
+        if (body.message) {
+          body.message = 'Внутренняя ошибка сервера';
+        }
+      }
+    }
+    return originalJson.call(this, body);
+  };
+  next();
+});
 
 // ── Управление сессиями ────────────────────────────────────────────────────────
 //

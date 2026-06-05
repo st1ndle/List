@@ -125,20 +125,20 @@ router.post('/api/categories/lowest-prices', async (req, res) => {
     // Math.max/min ограничивают диапазон допустимых значений limit: от 1 до 50.
     const limitVal = Math.max(1, Math.min(parseInt(limit, 10) || 4, 50));
 
-    // SELECT TOP N — MSSQL-синтаксис для ограничения количества строк.
-    // Здесь limitVal безопасно вставляется напрямую (уже провалидированное число),
-    // поэтому SQL-инъекция исключена.
-    const result = await p.request().query(`
-      SELECT TOP ${limitVal}
-        c.id AS category_id, c.name AS category_name, MIN(p.price) AS min_price,
-        (SELECT TOP 1 p2.emoji FROM products p2
-         WHERE p2.category_id = c.id ORDER BY p2.price ASC, p2.name ASC) AS category_icon
-      FROM categories c
-      JOIN products p ON c.id = p.category_id  -- INNER JOIN: исключаем категории без товаров
-      WHERE c.is_active = 1 AND p.is_active = 1
-      GROUP BY c.id, c.name
-      ORDER BY min_price ASC  -- Сортируем по минимальной цене: сначала дешёвые
-    `);
+    // SELECT TOP (@limit) — используем параметризованный запрос для безопасности
+    const result = await p.request()
+      .input('limit', sql.Int, limitVal)
+      .query(`
+        SELECT TOP (@limit)
+          c.id AS category_id, c.name AS category_name, MIN(p.price) AS min_price,
+          (SELECT TOP 1 p2.emoji FROM products p2
+           WHERE p2.category_id = c.id ORDER BY p2.price ASC, p2.name ASC) AS category_icon
+        FROM categories c
+        JOIN products p ON c.id = p.category_id  -- INNER JOIN: исключаем категории без товаров
+        WHERE c.is_active = 1 AND p.is_active = 1
+        GROUP BY c.id, c.name
+        ORDER BY min_price ASC  -- Сортируем по минимальной цене: сначала дешёвые
+      `);
     res.json(result.recordset);
   } catch (e) {
     console.error('Lowest prices error:', e);

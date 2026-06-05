@@ -6,22 +6,26 @@ import useAuthStore from '../../../store/useAuthStore';
 
 function HeaderContainer() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const navigate = useNavigate();
   const location = useLocation();
   const cartCount = useCartStore((state) => state.getCartItemsCount());
 
-  const navigationItems = useMemo(
-    () => [
+  const navigationItems = useMemo(() => {
+    const items = [
       { label: 'Главная', path: '/' },
       { label: 'Каталог', path: '/catalogue' },
       { label: 'Услуги склада', path: '/services' },
       { label: 'Тарифы', path: '/tariffs' },
       { label: 'О компании', path: '/about' },
       { label: 'Контакты', path: '/contacts' },
-    ],
-    [],
-  );
+    ];
+    if (user?.role === 'admin') {
+      items.push({ label: 'Панель управления', path: '/adminpage' });
+    }
+    return items;
+  }, [user]);
 
   return (
     <Header

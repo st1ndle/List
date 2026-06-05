@@ -180,6 +180,7 @@ router.post('/logout', (req, res) => {
 //        { user: null } если пользователь не авторизован
 // ─────────────────────────────────────────────────────────────────────────────
 router.get('/me', async (req, res) => {
+  console.log('[me] Session userId:', req.session.userId);
   // Если сессии нет — просто возвращаем null без ошибки.
   // Это не ошибка, это нормальное состояние для незалогиненного пользователя.
   if (!req.session.userId) return res.json({ user: null });

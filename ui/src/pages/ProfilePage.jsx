@@ -215,6 +215,7 @@ const ProfileOrders = () => {
 // --- Главная страница Профиля ---
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('data'); // 'data', 'orders', 'security'
+  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const loading = useAuthStore((state) => state.isLoading);
 
@@ -228,6 +229,9 @@ const ProfilePage = () => {
           <div className={`sitem ${activeTab === 'data' ? 'on' : ''}`} onClick={() => setActiveTab('data')}>Личные данные</div>
           <div className={`sitem ${activeTab === 'orders' ? 'on' : ''}`} onClick={() => setActiveTab('orders')}>История заказов</div>
           <div className={`sitem ${activeTab === 'security' ? 'on' : ''}`} onClick={() => setActiveTab('security')}>Безопасность</div>
+          {user?.role === 'admin' && (
+            <div className="sitem" onClick={() => navigate('/adminpage')}>Панель управления</div>
+          )}
         </aside>
         <main id="p-main" style={{ flex: 1 }}>
           {activeTab === 'data' && <ProfileData user={user} />}

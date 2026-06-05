@@ -163,7 +163,7 @@ app.use(session({
     maxAge: 1000 * 60 * 60 * 24, // Срок жизни cookie: 1 день (в миллисекундах)
     httpOnly: true,               // JavaScript на клиенте не может читать эту cookie (защита от XSS)
     // secure: true нужен при HTTPS; в разработке ставим false, иначе cookie не придёт
-    secure: process.env.NODE_ENV === 'production',
+    secure: 'auto',
     // sameSite: 'lax' — cookie отправляется при обычных переходах, но не при кросс-сайт POST.
     // Это базовая защита от CSRF-атак.
     sameSite: 'lax',

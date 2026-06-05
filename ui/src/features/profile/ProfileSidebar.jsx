@@ -1,7 +1,9 @@
 import PropTypes from 'prop-types';
+import { useNavigate } from 'react-router-dom';
 import './ProfileSidebar.css';
 
 function ProfileSidebar({ user, activeSection, onSectionChange }) {
+  const navigate = useNavigate();
   const getInitials = () => {
     const first = user.name ? user.name[0] : '';
     const last = user.lastname ? user.lastname[0] : '';
@@ -35,6 +37,14 @@ function ProfileSidebar({ user, activeSection, onSectionChange }) {
         >
           🔒 Безопасность
         </div>
+        {user?.role === 'admin' && (
+          <div 
+            className="sitem"
+            onClick={() => navigate('/adminpage')}
+          >
+            ⚙️ Панель управления
+          </div>
+        )}
       </nav>
     </aside>
   );
@@ -45,6 +55,7 @@ ProfileSidebar.propTypes = {
     name: PropTypes.string,
     lastname: PropTypes.string,
     phone: PropTypes.string,
+    role: PropTypes.string,
   }).isRequired,
   activeSection: PropTypes.oneOf(['data', 'orders', 'security']).isRequired,
   onSectionChange: PropTypes.func.isRequired,

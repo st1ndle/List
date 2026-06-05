@@ -35,10 +35,9 @@ class HistoryViewModel @Inject constructor(private val repo: AppRepository) : Vi
         viewModelScope.launch {
             repo.clearCart()
             order.items.forEach { item ->
-                // Image URL is null here since history doesn't provide it, but backend would ideally.
-                repo.addToCart(Product(item.product_id, item.name, null, item.price, null, ""))
-                if (item.quantity > 1) {
-                    repo.updateCartQuantity(item.product_id, item.quantity - 1)
+                repo.addToCart(Product(id = item.id, name = item.name, price = item.price, emoji = item.emoji))
+                if (item.q > 1) {
+                    repo.updateCartQuantity(item.id, item.q - 1)
                 }
             }
             onSuccess()
@@ -54,10 +53,10 @@ fun HistoryScreen(navController: NavController, viewModel: HistoryViewModel = hi
             items(viewModel.orders) { order ->
                 Card(modifier = Modifier.padding(8.dp).fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
-                        Text("Заказ #${order.order_id}", style = MaterialTheme.typography.titleMedium)
+                        Text("Заказ #${order.public_id}", style = MaterialTheme.typography.titleMedium)
                         Text("Статус: ${order.status}")
-                        Text("Сумма: ${order.total_price} ₽")
-                        Text("Дата: ${order.date}")
+                        Text("Сумма: ${order.total_amount} ₽")
+                        Text("Дата: ${order.created_at}")
                         Spacer(Modifier.height(8.dp))
                         Button(onClick = { viewModel.repeatOrder(order) { navController.navigate("cart") } }) {
                             Text("Повторить заказ")
@@ -68,3 +67,4 @@ fun HistoryScreen(navController: NavController, viewModel: HistoryViewModel = hi
         }
     }
 }
+

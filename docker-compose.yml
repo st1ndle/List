@@ -29,6 +29,8 @@ services:
       - DB_PASSWORD=StrongP@ssw0rd!
       - DB_NAME=master
       - PORT=8080
+    volumes:
+      - ./sql:/sql:ro
     depends_on:
       mssql:
         condition: service_healthy

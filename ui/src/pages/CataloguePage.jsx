@@ -18,6 +18,7 @@ function toCardProduct(product) {
     volume: product.unit_name || '1 шт.',
     priceValue: Number(product.price) || 0,
     price: `${Math.trunc(Number(product.price) || 0)} ₽`,
+    stock: typeof product.stock_quantity === 'number' ? product.stock_quantity : 0,
   };
 }
 

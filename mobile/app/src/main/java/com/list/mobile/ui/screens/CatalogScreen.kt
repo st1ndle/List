@@ -189,9 +189,20 @@ fun CatalogScreen(navController: NavController, viewModel: CatalogViewModel = hi
                                             style = MaterialTheme.typography.bodyLarge,
                                             color = MaterialTheme.colorScheme.primary
                                         )
+                                        Spacer(Modifier.height(2.dp))
+                                        val stockText = if (product.stock_quantity == 0) "Нет в наличии" else "В наличии: ${product.stock_quantity} шт."
+                                        val stockColor = if (product.stock_quantity == 0) Color(0xFF9B2020) else if (product.stock_quantity < 10) Color(0xFFC8920A) else Color.Gray
+                                        Text(
+                                            text = stockText,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = stockColor
+                                        )
                                     }
-                                    Button(onClick = { viewModel.addToCart(product) }) {
-                                        Text("В корзину")
+                                    Button(
+                                        onClick = { viewModel.addToCart(product) },
+                                        enabled = product.stock_quantity > 0
+                                    ) {
+                                        Text(if (product.stock_quantity > 0) "В корзину" else "Нет")
                                     }
                                 }
                             }

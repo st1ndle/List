@@ -19,7 +19,8 @@ data class Product(
     val description: String? = null,
     val emoji: String? = null,
     val bg_color: String? = null,
-    val badge: String? = null
+    val badge: String? = null,
+    val stock_quantity: Int = 0
 )
 
 data class Warehouse(

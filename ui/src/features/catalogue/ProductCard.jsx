@@ -17,28 +17,42 @@ function ProductCard({
   badge,
   bgColor,
   catColor,
+  stock = 999999,
 }) {
   const { items, addToCart, updateQuantity } = useCartStore();
   const quantity = items[id] || 0;
 
   const handleAdd = (e) => {
     e.stopPropagation();
-    if (onAdd) onAdd();
-    addToCart(id);
+    if (quantity < stock) {
+      if (onAdd) onAdd();
+      addToCart(id, stock);
+    }
   };
 
   const handleUpdate = (e, delta) => {
     e.stopPropagation();
-    updateQuantity(id, delta);
+    updateQuantity(id, delta, stock);
   };
 
   const renderAction = () => {
+    if (stock === 0) {
+      return <span style={{ color: 'var(--red)', fontSize: '13px', fontWeight: 600 }}>Нет в наличии</span>;
+    }
     if (quantity > 0) {
+      const isMaxLimit = quantity >= stock;
       return (
         <div className="qty-wrap" onClick={(e) => e.stopPropagation()}>
           <button className="qb" onClick={(e) => handleUpdate(e, -1)}>−</button>
           <span className="qn">{quantity}</span>
-          <button className="qb" onClick={(e) => handleUpdate(e, 1)}>+</button>
+          <button 
+            className="qb" 
+            onClick={(e) => handleUpdate(e, 1)} 
+            disabled={isMaxLimit}
+            style={isMaxLimit ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
+          >
+            +
+          </button>
         </div>
       );
     }
@@ -60,6 +74,9 @@ function ProductCard({
           <div className="pc-name">{name}</div>
           <div className="pc-brand">{brand}</div>
           <div className="pc-desc">{description || 'Описание скоро появится.'}</div>
+          <div className="pc-stock-info" style={{ fontSize: '11px', marginBottom: '8px', color: stock === 0 ? 'var(--red)' : stock < 10 ? 'var(--gold)' : 'var(--ink3)', fontWeight: stock < 10 ? 600 : 400 }}>
+            {stock === 0 ? 'Нет в наличии' : stock < 10 ? `Осталось мало: ${stock} шт.` : `В наличии: ${stock} шт.`}
+          </div>
           <div className="pc-foot">
             <div>
               <div className="pc-price" style={{ color: 'var(--green)' }}>{price}</div>
@@ -77,6 +94,11 @@ function ProductCard({
       <div className="product-card__meta">{brand}</div>
       <h3 className="product-card__name">{name}</h3>
       <div className="product-card__volume">{volume}</div>
+      {stock !== 999999 && (
+        <div style={{ fontSize: '11px', color: stock === 0 ? 'var(--red)' : stock < 10 ? 'var(--gold)' : 'var(--ink3)', marginBottom: '8px', fontWeight: stock < 10 ? 600 : 400 }}>
+          {stock === 0 ? 'Нет в наличии' : stock < 10 ? `Осталось мало: ${stock} шт.` : `В наличии: ${stock} шт.`}
+        </div>
+      )}
       <div className="product-card__bottom">
         <span className="product-card__price">{price}</span>
         {renderAction()}
@@ -99,7 +121,8 @@ ProductCard.propTypes = {
   badge: PropTypes.string,
   bgColor: PropTypes.string,
   catColor: PropTypes.string,
+  stock: PropTypes.number,
 };
-ProductCard.defaultProps = { onAdd: () => {} };
+ProductCard.defaultProps = { onAdd: () => {}, stock: 999999 };
 
 export default ProductCard;

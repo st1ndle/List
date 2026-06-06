@@ -186,20 +186,92 @@ router.patch('/:id/status', async (req, res) => {
   const validationErr = validateOrderStatus(req.body.status);
   if (validationErr) return res.status(400).json(validationErr);
 
-  try {
-    const p      = await getPool();
-    const result = await p.request()
-      .input('id',     sql.UniqueIdentifier, req.params.id)
-      .input('status', sql.NVarChar,         req.body.status)
-      .query(`
-        UPDATE orders
-        SET status = @status, updated_at = SYSUTCDATETIME()
-        OUTPUT INSERTED.id, INSERTED.order_number, INSERTED.public_id, INSERTED.status, INSERTED.updated_at
-        WHERE id = @id
-      `);
+  const newStatus = req.body.status;
 
-    if (result.recordset.length === 0) return res.status(404).json({ error: 'Заказ не найден' });
-    res.json({ status: 'ok', order: result.recordset[0] });
+  try {
+    const p = await getPool();
+    const transaction = new sql.Transaction(p);
+    await transaction.begin();
+
+    try {
+      // 1. Получаем текущий статус заказа
+      const orderCheck = await transaction.request()
+        .input('id', sql.UniqueIdentifier, req.params.id)
+        .query('SELECT status FROM orders WHERE id = @id');
+
+      if (orderCheck.recordset.length === 0) {
+        await transaction.rollback();
+        return res.status(404).json({ error: 'Заказ не найден' });
+      }
+
+      const oldStatus = orderCheck.recordset[0].status;
+
+      if (oldStatus !== newStatus) {
+        // Получаем товары в заказе
+        const itemsRes = await transaction.request()
+          .input('orderId', sql.UniqueIdentifier, req.params.id)
+          .query('SELECT product_id, quantity FROM order_items WHERE order_id = @orderId');
+        
+        const items = itemsRes.recordset;
+
+        // Если новый статус 'cancelled' — возвращаем товары на склад
+        if (newStatus === 'cancelled') {
+          for (const item of items) {
+            await transaction.request()
+              .input('productId', sql.UniqueIdentifier, item.product_id)
+              .input('quantity',  sql.Int,              item.quantity)
+              .query(`
+                UPDATE products
+                SET stock_quantity = stock_quantity + @quantity,
+                    updated_at = SYSUTCDATETIME()
+                WHERE id = @productId
+              `);
+          }
+        }
+        // Если старый статус был 'cancelled', а новый нет — списываем товары заново
+        else if (oldStatus === 'cancelled') {
+          for (const item of items) {
+            const updateRes = await transaction.request()
+              .input('productId', sql.UniqueIdentifier, item.product_id)
+              .input('quantity',  sql.Int,              item.quantity)
+              .query(`
+                UPDATE products
+                SET stock_quantity = stock_quantity - @quantity,
+                    updated_at = SYSUTCDATETIME()
+                OUTPUT INSERTED.name, INSERTED.stock_quantity
+                WHERE id = @productId AND is_active = 1 AND stock_quantity >= @quantity
+              `);
+
+            if (updateRes.recordset.length === 0) {
+              const infoRes = await transaction.request()
+                .input('productId', sql.UniqueIdentifier, item.product_id)
+                .query('SELECT name, stock_quantity, is_active FROM products WHERE id = @productId');
+
+              const prodName = infoRes.recordset[0]?.name || 'Неизвестный товар';
+              const prodStock = infoRes.recordset[0]?.stock_quantity || 0;
+              throw new Error(`Недостаточно товара "${prodName}" для возобновления заказа (на складе: ${prodStock}, требуется: ${item.quantity})`);
+            }
+          }
+        }
+      }
+
+      // 2. Обновляем статус заказа
+      const updateOrderRes = await transaction.request()
+        .input('id',     sql.UniqueIdentifier, req.params.id)
+        .input('status', sql.NVarChar,         newStatus)
+        .query(`
+          UPDATE orders
+          SET status = @status, updated_at = SYSUTCDATETIME()
+          OUTPUT INSERTED.id, INSERTED.order_number, INSERTED.public_id, INSERTED.status, INSERTED.updated_at
+          WHERE id = @id
+        `);
+
+      await transaction.commit();
+      res.json({ status: 'ok', order: updateOrderRes.recordset[0] });
+    } catch (err) {
+      await transaction.rollback();
+      throw err;
+    }
   } catch (e) {
     console.error('[Admin Orders] Update status error:', e);
     res.status(500).json({ error: e.message });

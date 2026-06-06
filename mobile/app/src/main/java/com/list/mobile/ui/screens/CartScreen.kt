@@ -26,11 +26,34 @@ import javax.inject.Inject
 @HiltViewModel
 class CartViewModel @Inject constructor(private val repo: AppRepository) : ViewModel() {
     val cartItems = repo.cartItems
+    var products by mutableStateOf<List<Product>>(emptyList())
+        private set
+
+    init {
+        loadProducts()
+    }
+
+    fun loadProducts() {
+        viewModelScope.launch {
+            try {
+                val res = repo.getProducts()
+                if (res.isSuccessful) {
+                    products = res.body() ?: emptyList()
+                }
+            } catch (e: Exception) {
+                // Fallback
+            }
+        }
+    }
 
     fun updateQuantity(id: String, current: Int, change: Int) {
         if (current + change <= 0) {
             viewModelScope.launch { repo.removeFromCart(id) }
         } else {
+            val product = products.find { it.id == id }
+            if (product != null && change > 0 && current + change > product.stock_quantity) {
+                return
+            }
             viewModelScope.launch { repo.updateCartQuantity(id, change) }
         }
     }
@@ -45,6 +68,10 @@ class CartViewModel @Inject constructor(private val repo: AppRepository) : ViewM
 fun CartScreen(navController: NavController, viewModel: CartViewModel = hiltViewModel()) {
     val items by viewModel.cartItems.collectAsState(initial = emptyList())
     val total = items.sumOf { it.price * it.quantity }
+    val hasValidationErrors = items.any { item ->
+        val product = viewModel.products.find { it.id == item.productId }
+        product != null && (item.quantity > product.stock_quantity || product.stock_quantity == 0)
+    }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Корзина") }) },
@@ -53,7 +80,12 @@ fun CartScreen(navController: NavController, viewModel: CartViewModel = hiltView
                 BottomAppBar {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text("Итого: $total ₽", style = MaterialTheme.typography.titleLarge)
-                        Button(onClick = { navController.navigate("checkout") }) { Text("Оформить") }
+                        Button(
+                            onClick = { navController.navigate("checkout") },
+                            enabled = !hasValidationErrors
+                        ) {
+                            Text(if (hasValidationErrors) "Ошибка остатков" else "Оформить")
+                        }
                     }
                 }
             }
@@ -61,7 +93,19 @@ fun CartScreen(navController: NavController, viewModel: CartViewModel = hiltView
     ) { padding ->
         LazyColumn(modifier = Modifier.padding(padding)) {
             items(items) { item ->
-                Card(modifier = Modifier.padding(8.dp).fillMaxWidth()) {
+                val product = viewModel.products.find { it.id == item.productId }
+                val stockText = if (product != null) {
+                    if (product.stock_quantity == 0) "Нет в наличии" else "Доступно: ${product.stock_quantity} шт."
+                } else {
+                    ""
+                }
+                val isOverStock = product != null && item.quantity > product.stock_quantity
+                val isMaxLimit = product != null && item.quantity >= product.stock_quantity
+
+                Card(
+                    modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                    colors = if (isOverStock) CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)) else CardDefaults.cardColors()
+                ) {
                     Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
@@ -78,11 +122,24 @@ fun CartScreen(navController: NavController, viewModel: CartViewModel = hiltView
                         Column(Modifier.weight(1f)) {
                             Text(item.name, style = MaterialTheme.typography.titleMedium)
                             Text("${item.price} ₽", style = MaterialTheme.typography.bodyLarge)
+                            if (stockText.isNotEmpty()) {
+                                Text(
+                                    text = stockText,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (product?.stock_quantity == 0 || isOverStock) Color(0xFF9B2020) else Color.Gray,
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+                            }
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             IconButton(onClick = { viewModel.updateQuantity(item.productId, item.quantity, -1) }) { Text("-") }
                             Text(item.quantity.toString())
-                            IconButton(onClick = { viewModel.updateQuantity(item.productId, item.quantity, 1) }) { Text("+") }
+                            IconButton(
+                                onClick = { viewModel.updateQuantity(item.productId, item.quantity, 1) },
+                                enabled = !isMaxLimit
+                            ) {
+                                Text("+", color = if (isMaxLimit) Color.LightGray else MaterialTheme.colorScheme.onSurface)
+                            }
                             IconButton(onClick = { viewModel.removeItem(item.productId) }) { Text("🗑") }
                         }
                     }

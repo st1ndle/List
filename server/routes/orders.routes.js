@@ -106,15 +106,43 @@ router.post('/', requireAuth, async (req, res) => {
       // Деструктурируем полученные сгенерированные поля заказа
       const { id: orderId, order_number, public_id } = orderRes.recordset[0];
 
-      // Шаг 6: Вставляем каждый товар из корзины в таблицу order_items.
-      // Цикл for...of с await: вставки выполняются последовательно внутри транзакции.
+      // Шаг 6: Проверяем остаток, списываем его и вставляем товары в таблицу order_items.
       for (const item of items) {
+        // Атомарное списание остатка товара
+        const updateRes = await transaction.request()
+          .input('productId', sql.UniqueIdentifier, String(item.id))
+          .input('quantity',  sql.Int,              item.quantity)
+          .query(`
+            UPDATE products
+            SET stock_quantity = stock_quantity - @quantity,
+                updated_at = SYSUTCDATETIME()
+            OUTPUT INSERTED.name, INSERTED.stock_quantity
+            WHERE id = @productId AND is_active = 1 AND stock_quantity >= @quantity
+          `);
+
+        if (updateRes.recordset.length === 0) {
+          // Если обновление не произошло — выясняем точную причину
+          const infoRes = await transaction.request()
+            .input('productId', sql.UniqueIdentifier, String(item.id))
+            .query('SELECT name, stock_quantity, is_active FROM products WHERE id = @productId');
+
+          if (infoRes.recordset.length === 0) {
+            throw new Error(`Товар с ID ${item.id} не найден в каталоге`);
+          }
+
+          const prod = infoRes.recordset[0];
+          if (!prod.is_active) {
+            throw new Error(`Товар "${prod.name}" временно недоступен для заказа`);
+          }
+
+          throw new Error(`Недостаточно товара "${prod.name}" на складе (в наличии: ${prod.stock_quantity}, требуется: ${item.quantity})`);
+        }
+
         await transaction.request()
           .input('orderId',         sql.UniqueIdentifier, orderId)
           .input('productId',       sql.UniqueIdentifier, String(item.id))
           .input('quantity',        sql.Int,              item.quantity)
           // price_at_purchase — фиксируем цену на момент оформления заказа.
-          // Даже если цена товара изменится, в заказе останется историческая цена.
           .input('priceAtPurchase', sql.Decimal(10, 2),   item.price_at_purchase)
           .query(`INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase)
                   VALUES (@orderId, @productId, @quantity, @priceAtPurchase)`);

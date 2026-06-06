@@ -12,3 +12,11 @@
   outline-offset: 2px;
   border-radius: 2px;
 }
+
+@media (max-width: 860px) {
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 28px !important;
+  }
+}
+

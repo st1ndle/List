@@ -140,9 +140,4 @@
   .home-page .svcs-grid {
     grid-template-columns: 1fr;
   }
-
-  .home-page .footer-grid {
-    grid-template-columns: 1fr;
-    gap: 28px;
-  }
 }

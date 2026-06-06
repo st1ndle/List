@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import HeaderContainer from './features/layout/header/HeaderContainer';
 import Toast from './components/ui/Toast';
+import SiteFooter from './features/layout/footer/SiteFooter';
 import HomePage from './pages/HomePage';
 import CataloguePage from './pages/CataloguePage';
 import ServicesPage from './pages/ServicesPage';
@@ -15,14 +16,21 @@ import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
 import useAuthStore from './store/useAuthStore';
+import useSiteSettingsStore from './store/useSiteSettingsStore';
 import './App.css';
 
 function App() {
   const checkAuth = useAuthStore((state) => state.checkAuth);
+  const fetchSettings = useSiteSettingsStore((state) => state.fetchSettings);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     checkAuth();
-  }, [checkAuth]);
+    fetchSettings();
+  }, [checkAuth, fetchSettings]);
+
+  const showFooter = location.pathname !== '/adminpage';
 
   return (
     <main className="app-root">
@@ -42,8 +50,10 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/adminpage" element={<AdminPage />} />
       </Routes>
+      {showFooter && <SiteFooter onNavigate={navigate} />}
     </main>
   );
 }
 
 export default App;
+

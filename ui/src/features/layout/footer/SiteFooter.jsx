@@ -1,7 +1,11 @@
 import PropTypes from 'prop-types';
+import useSiteSettingsStore from '../../../store/useSiteSettingsStore';
 import './SiteFooter.css';
 
 function SiteFooter({ onNavigate }) {
+  const getSetting = useSiteSettingsStore((state) => state.getSetting);
+  const foundationYear = getSetting('stat_year', '1998');
+
   return (
     <footer>
       <div className="footer-grid">
@@ -9,7 +13,7 @@ function SiteFooter({ onNavigate }) {
           <div className="f-logo">ООО ЛиСТ</div>
           <div className="f-tagline">Напитки оптом · Складское предприятие</div>
           <p className="f-desc">
-            Логистическая компания с 1998 года. Хранение, обработка и доставка напитков по Москве и Московской области.
+            Логистическая компания с {foundationYear} года. Хранение, обработка и доставка напитков по Москве и Московской области.
           </p>
         </div>
         <div>

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import SectionHeading from '../features/site/SectionHeading';
 import ServiceCard from '../features/site/ServiceCard';
-import SiteFooter from '../features/layout/footer/SiteFooter';
 import HeroContainer from '../features/site/HeroContainer';
 import ApiStorage from '../api/ApiStorage';
 import useSiteSettingsStore from '../store/useSiteSettingsStore';
@@ -121,15 +120,15 @@ function HomePage() {
           { text: 'ВАШЕГО', highlight: true },
           { text: 'БИЗНЕСА' },
         ]}
-        chip="⬡ Складское предприятие · С 1998 года"
+        chip={`⬡ Складское предприятие · С ${getSetting('stat_year', '1998')} года`}
         description="ООО ЛиСТ — дистрибьюция и оптовая торговля напитками. Вино, пиво, газировки и вода со склада в Домодедово. Самовывоз и доставка по Москве и МО."
         primaryLabel="Открыть каталог"
         secondaryLabel="Получить консультацию"
         onPrimaryClick={() => navigate('/catalogue')}
         onSecondaryClick={() => navigate('/contacts')}
         stats={[
-          { value: '450+',                              label: 'Позиций в каталоге' },
-          { value: getSetting('stat_pallets', '17К'),  label: 'Паллетомест на складе' },
+          { value: '450+', label: 'Позиций в каталоге' },
+          { value: getSetting('stat_pallets', '17К'), label: 'Паллетомест на складе' },
           { value: getSetting('stat_transport', '120'), label: 'Единиц транспорта' },
         ]}
         categories={heroCategories.map((category) => ({
@@ -139,18 +138,18 @@ function HomePage() {
         badge={{ prefix: 'от', price: '32₽', suffix: 'сутки/пал.' }}
       />
 
-      <section className="section">
+      <section className="section">a
         <div className="about-grid">
           <div>
-            <SectionHeading variant="legacy" label="О компании" title="В режиме нон-стоп с 1998 года" />
+            <SectionHeading variant="legacy" label="О компании" title={`В режиме нон-стоп с ${getSetting('stat_year', '1998')} года`} />
             <p className="home-about__paragraph">
-              Компания успешно функционирует на рынке с 1998 года. В начале пути специализировалась на дистрибуции для крупных оптовых клиентов. Первым якорным клиентом стала международная группа <strong>Anadolu Efes</strong>.
+              Компания успешно функционирует на рынке с {getSetting('stat_year', '1998')} года. В начале пути специализировалась на дистрибуции для крупных оптовых клиентов. Первым якорным клиентом стала международная группа <strong>Anadolu Efes</strong>.
             </p>
             <p className="home-about__paragraph home-about__paragraph--spaced">
               Сегодня ежедневно обрабатывается, принимается на хранение и доставляется более чем по <strong>2 000 адресов</strong> Москвы и МО порядка <strong>500 тонн грузов</strong>. В штате — 150 профессионалов.
             </p>
             <Button
-              variant="solid"
+              variant="solid" a
               size="md"
               className="home-about__button"
               onClick={() => navigate('/about')}
@@ -244,8 +243,6 @@ function HomePage() {
           </div>
         </div>
       </section>
-
-      <SiteFooter onNavigate={navigate} />
     </main>
   );
 }

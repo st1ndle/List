@@ -29,6 +29,8 @@ export default function AdminProducts() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [attrEntries, setAttrEntries] = useState([]);
+  const [packCount, setPackCount] = useState('');
+  const [unitsPerPack, setUnitsPerPack] = useState('');
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -90,6 +92,8 @@ export default function AdminProducts() {
       is_active: true
     });
     setAttrEntries([]);
+    setPackCount('');
+    setUnitsPerPack('');
     setIsModalOpen(true);
   };
 
@@ -102,6 +106,8 @@ export default function AdminProducts() {
       console.error('Error parsing product attributes:', e);
       setAttrEntries([]);
     }
+    setPackCount('');
+    setUnitsPerPack('');
     setIsModalOpen(true);
   };
 
@@ -357,6 +363,75 @@ export default function AdminProducts() {
                     checked={editingProduct.is_active}
                     onChange={e => setEditingProduct({...editingProduct, is_active: e.target.checked})}
                   />
+                </div>
+
+                {/* Pack Calculator */}
+                <div className="form-group col-span-3" style={{ border: '1.5px solid var(--border)', borderRadius: '10px', padding: '16px', background: 'var(--bg2)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--ink2)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    📦 Быстрый расчет остатка по упаковкам
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '12px', alignItems: 'flex-end' }}>
+                    <div className="ui-input-group" style={{ marginBottom: 0 }}>
+                      <label className="ui-input-label" style={{ fontSize: '11px' }}>Кол-во коробок/упаковок:</label>
+                      <input
+                        type="number"
+                        placeholder="Например: 5"
+                        value={packCount}
+                        onChange={e => setPackCount(e.target.value)}
+                        className="ui-input"
+                        style={{ padding: '8px 12px', fontSize: '13px' }}
+                      />
+                    </div>
+                    <div className="ui-input-group" style={{ marginBottom: 0 }}>
+                      <label className="ui-input-label" style={{ fontSize: '11px' }}>Штук в одной коробке:</label>
+                      <input
+                        type="number"
+                        placeholder="Например: 5"
+                        value={unitsPerPack}
+                        onChange={e => setUnitsPerPack(e.target.value)}
+                        className="ui-input"
+                        style={{ padding: '8px 12px', fontSize: '13px' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const boxes = parseInt(packCount) || 0;
+                          const rate = parseInt(unitsPerPack) || 0;
+                          const total = boxes * rate;
+                          if (total > 0) {
+                            setEditingProduct({
+                              ...editingProduct,
+                              stock_quantity: total
+                            });
+                          }
+                        }}
+                        className="btn-solid"
+                        style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '6px', whiteSpace: 'nowrap', height: '36px' }}
+                      >
+                        Установить остаток ({ (parseInt(packCount) || 0) * (parseInt(unitsPerPack) || 0) } шт.)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const boxes = parseInt(packCount) || 0;
+                          const rate = parseInt(unitsPerPack) || 0;
+                          const total = boxes * rate;
+                          if (total > 0) {
+                            setEditingProduct({
+                              ...editingProduct,
+                              stock_quantity: (editingProduct.stock_quantity || 0) + total
+                            });
+                          }
+                        }}
+                        className="btn-ghost"
+                        style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '6px', whiteSpace: 'nowrap', height: '36px' }}
+                      >
+                        Прибавить (+{ (parseInt(packCount) || 0) * (parseInt(unitsPerPack) || 0) } шт.)
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Row 5: Description */}

@@ -274,37 +274,14 @@
 <div class="view" id="view-services">
   <div style="padding-top:68px;min-height:100vh">
     <section class="section">
-      <div class="sec-label">Складские услуги</div>
-      <h1 class="sec-title">Ответственное хранение<br>и обработка грузов</h1>
-      <p class="sec-sub" style="margin-top:14px">От 32 рублей за паллето-место в сутки. Склад категории А в Домодедово.</p>
-      <div class="svcs-grid" style="margin-top:48px">
-        <div class="svc"><div class="svc-icon">🏭</div><div class="svc-title">Хранение</div><div class="svc-desc">Напольное и стеллажное хранение товаров широкого спектра. Оптимальная температура и влажность. Склад категории А.</div><div class="svc-price">от 32 ₽ / пал. в сутки</div></div>
-        <div class="svc"><div class="svc-icon">🏗️</div><div class="svc-title">Погрузка / разгрузка</div><div class="svc-desc">Погрузочно-разгрузочные работы механизированным способом или вручную в соответствии с характеристиками груза.</div><div class="svc-price">от 140 ₽ / паллет</div></div>
-        <div class="svc"><div class="svc-icon">📦</div><div class="svc-title">Комплектация</div><div class="svc-desc">Сформированный заказ комплектуется указанными товарами и передаётся в службу доставки или на самовывоз.</div><div class="svc-price">7 ₽ / шт. · 18 ₽ / короб</div></div>
-        <div class="svc"><div class="svc-icon">🏷️</div><div class="svc-title">Маркировка товара</div><div class="svc-desc">Печать этикеток и нанесение маркировки на любую единицу товара согласно требованиям заказчика.</div><div class="svc-price">от 7 ₽ / этикетка</div></div>
-        <div class="svc"><div class="svc-icon">🎁</div><div class="svc-title">Опалечивание</div><div class="svc-desc">Укладка товара на паллеты и фиксация стрейч-плёнкой при необходимости дополнительной защиты груза.</div><div class="svc-price">250 ₽ / упаковка стрейч</div></div>
-        <div class="svc"><div class="svc-icon">🔄</div><div class="svc-title">Кросс-докинг</div><div class="svc-desc">Перегрузка товара и краткосрочное хранение грузовыми местами без полной складской обработки.</div><div class="svc-price">от 180 ₽ / монопаллет</div></div>
-      </div>
-    </section>
-    <section class="section section-alt">
-      <div class="sec-head"><div class="sec-label">Как это работает</div><h2 class="sec-title">Работать с нами просто</h2></div>
-      <div class="steps">
-        <div class="step"><div class="step-num">1</div><div class="step-ttl">Приёмка товаров</div><div class="step-txt">Проверяем документы, количество, ассортимент и упаковку</div></div>
-        <div class="step"><div class="step-num">2</div><div class="step-ttl">Сортировка</div><div class="step-txt">Сортируем по паллетам, бракованный товар — в спец. зону</div></div>
-        <div class="step"><div class="step-num">3</div><div class="step-ttl">Хранение</div><div class="step-txt">Размещаем на складе, оформляем акт приёма-передачи</div></div>
-        <div class="step"><div class="step-num">4</div><div class="step-ttl">Комплектация</div><div class="step-txt">Наносим штрих-коды, комплектуем заказы по запросу</div></div>
-        <div class="step"><div class="step-num">5</div><div class="step-ttl">Выдача</div><div class="step-txt">Передаём на доставку нашей службой или самовывоз</div></div>
-      </div>
-    </section>
-    <!-- Calculator -->
-    <section class="section">
       <div class="sec-head"><div class="sec-label">Расчёт стоимости</div><h2 class="sec-title">Калькулятор хранения</h2></div>
       <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:36px;max-width:560px">
         <div class="fg"><label class="flbl">Тип паллета</label>
-          <select class="finp" id="pal-type" onchange="calculateStoragePrice()">
-            <option value="32">Европаллет (32 ₽/сутки)</option>
-            <option value="36">Финский/Американский паллет (36 ₽/сутки)</option>
-          </select>
+          <input type="hidden" id="pal-type" value="32">
+          <div class="pallet-chips">
+            <button type="button" class="pallet-chip active" onclick="selectPalletType(32, this)">Европаллет (32 ₽/сутки)</button>
+            <button type="button" class="pallet-chip" onclick="selectPalletType(36, this)">Финский/Амер. (36 ₽/сутки)</button>
+          </div>
         </div>
         <div class="frow">
           <div class="fg"><label class="flbl">Количество паллет</label><input class="finp" type="number" id="pal-cnt" value="10" min="1" oninput="calculateStoragePrice()"></div>
@@ -372,7 +349,7 @@
   <div style="padding-top:68px;min-height:100vh">
     <section class="section">
       <div class="sec-label">О компании</div>
-      <h1 class="sec-title">3D Logistic — <br>в режиме нон-стоп</h1>
+      <h1 class="sec-title">ООО ЛиСТ — <br>в режиме нон-стоп</h1>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:40px">
         <div>
           <p style="font-size:15px;color:var(--ink2);line-height:1.8;margin-bottom:16px">Логистическая компания успешно функционирует на рынке с <strong>1998 года</strong>. Реализовав два десятилетия назад масштабный проект создания полнофункциональной транспортной компании, сегодня прочно занимает тематическую нишу и расширяет сеть.</p>

@@ -21,7 +21,7 @@ function AboutPage() {
           label="О компании"
           title={(
             <>
-              3D Logistic —
+              ООО ЛиСТ —
               <br />
               в режиме нон-стоп
             </>

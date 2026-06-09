@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.list.mobile.app-mergeDebugResources-57:/values-v16/values-v16.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\aleksandr\\.gradle\\caches\\8.12\\transforms\\5fc2113918b2479c3891cc037123e7fe\\transformed\\core-1.12.0\\res\\values-v16\\values-v16.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "65",
+                        "endOffsets": "116"
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,1635 @@
+=== 1. СХЕМА БАЗЫ ДАННЫХ (MSSQL - init.sql) ===
+
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+
+IF OBJECT_ID('dbo.categories', 'U') IS NULL
+BEGIN
+    CREATE TABLE categories (
+        id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+        slug NVARCHAR(255) NOT NULL UNIQUE,
+        name NVARCHAR(255) NOT NULL,
+        color_hex VARCHAR(50) NOT NULL,
+        sort_order INT DEFAULT 0,
+        is_active BIT DEFAULT 1,
+        deleted_at DATETIME2 NULL
+    );
+    CREATE INDEX IX_Categories_IsActive ON categories(is_active);
+END
+
+IF OBJECT_ID('dbo.products', 'U') IS NULL
+BEGIN
+    CREATE TABLE products (
+        id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+        category_id UNIQUEIDENTIFIER NOT NULL,
+        name NVARCHAR(255) NOT NULL,
+        brand NVARCHAR(255) NOT NULL,
+        description NVARCHAR(MAX),
+        price DECIMAL(10, 2) NOT NULL,
+        unit_name NVARCHAR(50) NOT NULL,
+        emoji NVARCHAR(50),
+        badge NVARCHAR(50),
+        bg_color VARCHAR(50),
+        attributes NVARCHAR(MAX),
+        stock_quantity INT DEFAULT 0,
+        is_active BIT DEFAULT 1,
+        created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+        updated_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+        deleted_at DATETIME2 NULL,
+        CONSTRAINT FK_Products_Categories FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
+        CONSTRAINT CHK_Products_Attributes_JSON CHECK (attributes IS NULL OR ISJSON(attributes) = 1)
+    );
+    CREATE INDEX idx_products_category_id ON products(category_id);
+    CREATE INDEX idx_products_is_active ON products(is_active);
+END
+
+IF OBJECT_ID('dbo.users', 'U') IS NULL
+BEGIN
+    CREATE TABLE users (
+        id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+        first_name NVARCHAR(100) NOT NULL,
+        last_name NVARCHAR(100),
+        phone NVARCHAR(20) UNIQUE,
+        email NVARCHAR(255) UNIQUE,
+        password_hash NVARCHAR(255) NOT NULL,
+        role NVARCHAR(20) NOT NULL DEFAULT 'user',
+        is_active BIT DEFAULT 1,
+        created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+        updated_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+        deleted_at DATETIME2 NULL,
+        CONSTRAINT CHK_Users_Role CHECK (role IN ('user', 'admin'))
+    );
+    CREATE INDEX IX_Users_Phone ON users(phone);
+    CREATE INDEX IX_Users_IsActive ON users(is_active);
+END
+
+IF OBJECT_ID('dbo.warehouses', 'U') IS NULL
+BEGIN
+    CREATE TABLE warehouses (
+        id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+        warehouse_code NVARCHAR(10) NOT NULL UNIQUE,
+        name NVARCHAR(255) NOT NULL,
+        city NVARCHAR(100) NOT NULL,
+        address NVARCHAR(255) NOT NULL,
+        phone NVARCHAR(50),
+        working_hours_start TIME,
+        working_hours_end   TIME,
+        is_active BIT DEFAULT 1,
+        created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+        updated_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+        deleted_at DATETIME2 NULL
+    );
+    CREATE INDEX IX_Warehouses_IsActive ON warehouses(is_active);
+END
+
+IF OBJECT_ID('dbo.orders', 'U') IS NULL
+BEGIN
+    CREATE TABLE orders (
+        id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+        order_number INT IDENTITY(1000, 1) UNIQUE NOT NULL,
+        public_id AS (
+            CASE
+                WHEN warehouse_code IS NOT NULL
+                THEN warehouse_code + N'-' + RIGHT(N'00000000' + CAST(order_number AS NVARCHAR(8)), 8)
+                ELSE N'ORD-' + RIGHT(N'00000000' + CAST(order_number AS NVARCHAR(8)), 8)
+            END
+        ) PERSISTED,
+        warehouse_code NVARCHAR(10) NULL,
+        user_id UNIQUEIDENTIFIER NULL,
+        status NVARCHAR(50) NOT NULL DEFAULT 'new',
+        total_amount DECIMAL(10, 2) NOT NULL,
+        customer_name NVARCHAR(100) NOT NULL,
+        customer_phone NVARCHAR(20) NOT NULL,
+        delivery_address NVARCHAR(MAX),
+        comment NVARCHAR(MAX),
+        created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+        updated_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+        deleted_at DATETIME2 NULL,
+        CONSTRAINT FK_Orders_Users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+        CONSTRAINT CHK_Orders_Status CHECK (status IN ('new', 'processing', 'completed', 'cancelled'))
+    );
+    CREATE INDEX IX_Orders_UserId ON orders(user_id);
+    CREATE INDEX IX_Orders_Status ON orders(status);
+END
+
+IF OBJECT_ID('dbo.order_items', 'U') IS NULL
+BEGIN
+    CREATE TABLE order_items (
+        id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+        order_id UNIQUEIDENTIFIER NOT NULL,
+        product_id UNIQUEIDENTIFIER NOT NULL,
+        quantity INT NOT NULL,
+        price_at_purchase DECIMAL(10, 2) NOT NULL,
+        CONSTRAINT FK_OrderItems_Orders FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+        CONSTRAINT FK_OrderItems_Products FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE NO ACTION,
+        CONSTRAINT CHK_OrderItems_Quantity CHECK (quantity > 0)
+    );
+    CREATE INDEX IX_OrderItems_OrderId ON order_items(order_id);
+END
+
+
+=== 2. БЭКЕНД: РОУТЫ И ОБРАБОТКА ЗАКАЗОВ (Node.js/Express/MSSQL - orders.routes.js) ===
+
+const express      = require('express');
+const sql          = require('mssql');
+const { getPool }  = require('../config/db');
+const requireAuth  = require('../middleware/requireAuth');
+const { validateCreateOrder } = require('../validators/order.validator');
+
+const router = express.Router();
+
+router.post('/', requireAuth, async (req, res) => {
+  const err = validateCreateOrder(req.body);
+  if (err) return res.status(400).json(err);
+
+  const {
+    items, total_amount, delivery_address,
+    comment, customer_name, customer_phone, warehouse_code,
+  } = req.body;
+
+  try {
+    const p = await getPool();
+    const transaction = new sql.Transaction(p);
+    await transaction.begin();
+
+    try {
+      const userRes = await transaction.request()
+        .input('userId', sql.UniqueIdentifier, req.session.userId)
+        .query('SELECT first_name, last_name, phone FROM users WHERE id = @userId');
+      if (userRes.recordset.length === 0) throw new Error('User not found');
+      const user = userRes.recordset[0];
+
+      const finalName  = customer_name  || `${user.first_name} ${user.last_name || ''}`.trim();
+      const finalPhone = customer_phone || user.phone || '';
+
+      let finalWarehouseCode = null;
+      if (warehouse_code) {
+        const whRes = await transaction.request()
+          .input('wcode', sql.NVarChar, warehouse_code)
+          .query('SELECT warehouse_code FROM warehouses WHERE warehouse_code = @wcode AND is_active = 1');
+        if (whRes.recordset.length > 0) finalWarehouseCode = whRes.recordset[0].warehouse_code;
+      }
+
+      const orderRes = await transaction.request()
+        .input('userId',          sql.UniqueIdentifier, req.session.userId)
+        .input('warehouseCode',   sql.NVarChar,         finalWarehouseCode)
+        .input('totalAmount',     sql.Decimal(10, 2),   total_amount)
+        .input('customerName',    sql.NVarChar,         finalName)
+        .input('customerPhone',   sql.NVarChar,         finalPhone)
+        .input('deliveryAddress', sql.NVarChar,         delivery_address || null)
+        .input('comment',         sql.NVarChar,         comment || null)
+        .query(`
+          INSERT INTO orders
+            (user_id, warehouse_code, status, total_amount, customer_name, customer_phone, delivery_address, comment)
+          OUTPUT INSERTED.id, INSERTED.order_number, INSERTED.public_id
+          VALUES (@userId, @warehouseCode, 'new', @totalAmount, @customerName, @customerPhone, @deliveryAddress, @comment)
+        `);
+
+      const { id: orderId, order_number, public_id } = orderRes.recordset[0];
+
+      for (const item of items) {
+        const updateRes = await transaction.request()
+          .input('productId', sql.UniqueIdentifier, String(item.id))
+          .input('quantity',  sql.Int,              item.quantity)
+          .query(`
+            UPDATE products
+            SET stock_quantity = stock_quantity - @quantity,
+                updated_at = SYSUTCDATETIME()
+            OUTPUT INSERTED.name, INSERTED.stock_quantity
+            WHERE id = @productId AND is_active = 1 AND stock_quantity >= @quantity
+          `);
+
+        if (updateRes.recordset.length === 0) {
+          const infoRes = await transaction.request()
+            .input('productId', sql.UniqueIdentifier, String(item.id))
+            .query('SELECT name, stock_quantity, is_active FROM products WHERE id = @productId');
+
+          if (infoRes.recordset.length === 0) {
+            throw new Error(`Товар с ID ${item.id} не найден в каталоге`);
+          }
+
+          const prod = infoRes.recordset[0];
+          if (!prod.is_active) {
+            throw new Error(`Товар "${prod.name}" временно недоступен для заказа`);
+          }
+
+          throw new Error(`Недостаточно товара "${prod.name}" на складе (в наличии: ${prod.stock_quantity}, требуется: ${item.quantity})`);
+        }
+
+        await transaction.request()
+          .input('orderId',         sql.UniqueIdentifier, orderId)
+          .input('productId',       sql.UniqueIdentifier, String(item.id))
+          .input('quantity',        sql.Int,              item.quantity)
+          .input('priceAtPurchase', sql.Decimal(10, 2),   item.price_at_purchase)
+          .query(`INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase)
+                  VALUES (@orderId, @productId, @quantity, @priceAtPurchase)`);
+      }
+
+      await transaction.commit();
+      res.status(201).json({ status: 'ok', order_id: orderId, order_number, public_id });
+    } catch (e) {
+      await transaction.rollback();
+      throw e;
+    }
+  } catch (e) {
+    console.error('Order creation error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.get('/', requireAuth, async (req, res) => {
+  try {
+    const p = await getPool();
+
+    const ordersRes = await p.request()
+      .input('userId', sql.UniqueIdentifier, req.session.userId)
+      .query('SELECT * FROM orders WHERE user_id = @userId ORDER BY created_at DESC');
+    const userOrders = ordersRes.recordset;
+
+    if (userOrders.length > 0) {
+      const itemsRes = await p.request()
+        .input('userId', sql.UniqueIdentifier, req.session.userId)
+        .query(`
+          SELECT oi.order_id, oi.product_id, oi.quantity, oi.price_at_purchase, p.name, p.emoji
+          FROM order_items oi
+          JOIN orders o ON oi.order_id = o.id
+          LEFT JOIN products p ON oi.product_id = p.id
+          WHERE o.user_id = @userId
+        `);
+
+      const itemsByOrder = {};
+      itemsRes.recordset.forEach(item => {
+        if (!itemsByOrder[item.order_id]) itemsByOrder[item.order_id] = [];
+        itemsByOrder[item.order_id].push({
+          id:    item.product_id,
+          name:  item.name  || 'Неизвестный товар',
+          emoji: item.emoji || '📦',
+          q:     item.quantity,
+          price: item.price_at_purchase,
+        });
+      });
+
+      userOrders.forEach(o => { o.items = itemsByOrder[o.id] || []; });
+    }
+
+    res.json(userOrders);
+  } catch (e) {
+    console.error('Fetch orders error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+module.exports = router;
+
+
+=== 3. БЭКЕНД: РОУТЫ И ОБРАБОТКА АУТЕНТИФИКАЦИИ (Node.js/Express/MSSQL - auth.routes.js) ===
+
+const express = require('express');
+const sql     = require('mssql');
+const bcrypt  = require('bcryptjs');
+const { getPool }                    = require('../config/db');
+const { validateRegister, validateLogin } = require('../validators/auth.validator');
+
+const router = express.Router();
+
+router.post('/register', async (req, res) => {
+  const err = validateRegister(req.body);
+  if (err) return res.status(400).json(err);
+
+  const { firstName, lastName, phone, email, password } = req.body;
+
+  const cleanPhone = phone ? phone.replace(/\D/g, '') : null;
+  const cleanEmail = email ? email.toLowerCase().trim() : null;
+
+  try {
+    const p = await getPool();
+
+    const existing = await p.request()
+      .input('phone', sql.NVarChar, cleanPhone)
+      .input('email', sql.NVarChar, cleanEmail)
+      .query('SELECT id FROM users WHERE (phone = @phone AND phone IS NOT NULL) OR (email = @email AND email IS NOT NULL)');
+
+    if (existing.recordset.length > 0) {
+      return res.status(409).json({ error: 'Пользователь с такими контактами уже существует' });
+    }
+
+    const hash = await bcrypt.hash(password, 10);
+
+    const result = await p.request()
+      .input('firstName', sql.NVarChar, firstName.trim())
+      .input('lastName',  sql.NVarChar, lastName ? lastName.trim() : null)
+      .input('phone',     sql.NVarChar, cleanPhone)
+      .input('email',     sql.NVarChar, cleanEmail)
+      .input('hash',      sql.NVarChar, hash)
+      .query(`INSERT INTO users (first_name, last_name, phone, email, password_hash)
+              OUTPUT INSERTED.id
+              VALUES (@firstName, @lastName, @phone, @email, @hash)`);
+
+    const userId = result.recordset[0].id;
+    req.session.userId = userId;
+
+    res.status(201).json({ status: 'ok', userId });
+  } catch (e) {
+    console.error('Register error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post('/login', async (req, res) => {
+  const err = validateLogin(req.body);
+  if (err) return res.status(400).json(err);
+
+  const { login, password } = req.body;
+
+  const isEmail     = login.includes('@');
+  const searchValue = isEmail ? login.toLowerCase().trim() : login.replace(/\D/g, '');
+  const query       = isEmail
+    ? 'SELECT * FROM users WHERE email = @val'
+    : 'SELECT * FROM users WHERE phone = @val';
+
+  try {
+    const p      = await getPool();
+    const result = await p.request().input('val', sql.NVarChar, searchValue).query(query);
+
+    if (result.recordset.length === 0) {
+      return res.status(401).json({ error: 'Неверный логин или пароль' });
+    }
+
+    const user = result.recordset[0];
+
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Неверный логин или пароль' });
+    }
+
+    req.session.userId = user.id;
+    res.json({ status: 'ok', userId: user.id });
+  } catch (e) {
+    console.error('Login error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post('/logout', (req, res) => {
+  req.session.destroy(e => {
+    if (e) return res.status(500).json({ error: 'Logout failed' });
+    res.clearCookie('diplom.sid');
+    res.json({ status: 'ok' });
+  });
+});
+
+router.get('/me', async (req, res) => {
+  console.log('[me] Session userId:', req.session.userId);
+  if (!req.session.userId) return res.json({ user: null });
+
+  try {
+    const p      = await getPool();
+    const result = await p.request()
+      .input('id', sql.UniqueIdentifier, req.session.userId)
+      .query('SELECT id, first_name, last_name, phone, email, role FROM users WHERE id = @id');
+
+    if (result.recordset.length === 0) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+    res.json({ user: result.recordset[0] });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+module.exports = router;
+
+
+=== 4. ХРАНИЛИЩЕ СОСТОЯНИЯ КОРЗИНЫ (React Zustand - useCartStore.js) ===
+
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+
+const useCartStore = create(
+  persist(
+    (set, get) => ({
+      items: {},
+
+      addToCart: (id, stockLimit = 999999) => set((state) => {
+        const currentQty = state.items[id] || 0;
+        if (currentQty >= stockLimit) return {};
+        return {
+          items: {
+            ...state.items,
+            [id]: currentQty + 1,
+          },
+        };
+      }),
+
+      updateQuantity: (id, delta, stockLimit = 999999) => set((state) => {
+        const currentQty = state.items[id] || 0;
+        const nextQty = currentQty + delta;
+        if (nextQty <= 0) {
+          const nextItems = { ...state.items };
+          delete nextItems[id];
+          return { items: nextItems };
+        }
+        if (delta > 0 && nextQty > stockLimit) {
+          return {};
+        }
+        return {
+          items: {
+            ...state.items,
+            [id]: nextQty,
+          },
+        };
+      }),
+
+      removeFromCart: (id) => set((state) => {
+        const nextItems = { ...state.items };
+        delete nextItems[id];
+        return { items: nextItems };
+      }),
+
+      clearCart: () => set({ items: {} }),
+
+      addMultiple: (newItems) => set((state) => {
+        const nextItems = { ...state.items };
+        for (const [id, qty] of Object.entries(newItems)) {
+          nextItems[id] = (nextItems[id] || 0) + qty;
+        }
+        return { items: nextItems };
+      }),
+
+      getCartItemsCount: () => {
+        const state = get();
+        return Object.keys(state.items).length;
+      },
+    }),
+    {
+      name: 'diplom_cart',
+      storage: createJSONStorage(() => localStorage),
+    }
+  )
+);
+
+export default useCartStore;
+
+
+=== 5. ФРОНТЕНД: СТРАНИЦА ИСТОРИИ ЗАКАЗОВ (React.js - OrdersPage.jsx) ===
+
+import { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import ApiStorage from '../api/ApiStorage';
+import useCartStore from '../store/useCartStore';
+import useToastStore from '../store/useToastStore';
+import './OrdersPage.css';
+
+const STATUS_LABELS  = { new: 'Новый', processing: 'В обработке', ready: 'Готов к выдаче', completed: 'Выдан', cancelled: 'Отменён' };
+const STATUS_CLASSES = { new: 'sb-new', processing: 'sb-proc', ready: 'sb-ready', completed: 'sb-done', cancelled: 'sb-cancel' };
+const STATUS_STEPS   = { new: 1, processing: 2, ready: 3, completed: 4, cancelled: 0 };
+const PROGRESS_LABELS = ['Принят', 'Обработка', 'Готов', 'Выдан'];
+
+function OrdersPage() {
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const { addMultiple } = useCartStore();
+  const { showToast } = useToastStore();
+
+  const [orders,  setOrders]  = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [authErr, setAuthErr] = useState(false);
+
+  const handleRepeatOrder = (order) => {
+    if (!order.items || order.items.length === 0) return;
+
+    const itemsMap = {};
+    order.items.forEach(item => {
+      if (item.id) {
+        itemsMap[item.id] = (itemsMap[item.id] || 0) + item.q;
+      }
+    });
+
+    addMultiple(itemsMap);
+    showToast('🛒', 'Товары из заказа добавлены в корзину');
+    navigate('/cart');
+  };
+
+  const successPublicId = location.state?.successPublicId;
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const data = await ApiStorage.orders.getAll();
+        setOrders(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (err.message?.includes('401') || err.message?.includes('авторизован')) {
+          setAuthErr(true);
+        }
+        console.error('Ошибка загрузки заказов:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
+  }, []);
+
+  if (loading) {
+    return (
+      <main className="orders-page">
+        <div className="orders-shell">
+          <div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--ink3)' }}>
+            Загружаем ваши заказы...
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (authErr) {
+    return (
+      <main className="orders-page">
+        <div className="orders-shell">
+          <div className="empty-state">
+            <div className="empty-icon">🔒</div>
+            <div className="empty-ttl">Требуется авторизация</div>
+            <p style={{ marginBottom: '28px', color: 'var(--ink3)' }}>
+              Войдите в аккаунт, чтобы просмотреть историю заказов
+            </p>
+            <button
+              className="btn-solid"
+              style={{ padding: '12px 32px', fontSize: '15px', borderRadius: '10px' }}
+              onClick={() => navigate('/auth')}
+            >
+              Войти
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="orders-page">
+      <div className="orders-shell">
+        <div className="orders-header">
+          <span className="orders-back" onClick={() => navigate('/')}>← Главная</span>
+          <h1 className="orders-title">Мои заказы</h1>
+        </div>
+
+        {successPublicId && (
+          <div className="orders-success-banner">
+            <span className="success-icon">✅</span>
+            <div>
+              <div className="success-title">Заказ оформлен!</div>
+              <div className="success-sub">
+                Номер заказа: <strong>{successPublicId}</strong>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {orders.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">📦</div>
+            <div className="empty-ttl">Заказов пока нет</div>
+            <p style={{ marginBottom: '28px', color: 'var(--ink3)' }}>
+              Оформите первый заказ из каталога
+            </p>
+            <button
+              className="btn-solid"
+              style={{ padding: '12px 32px', fontSize: '15px', borderRadius: '10px' }}
+              onClick={() => navigate('/catalogue')}
+            >
+              Открыть каталог
+            </button>
+          </div>
+        ) : (
+          <div className="orders-list">
+            {orders.map((o) => {
+              const step    = STATUS_STEPS[o.status] || 1;
+              const isCancelled = o.status === 'cancelled';
+              const createdDate = new Date(o.created_at).toLocaleDateString('ru-RU', {
+                day: 'numeric', month: 'long', year: 'numeric',
+              });
+
+              const commentText = o.comment || '';
+              const dateMatch   = commentText.match(/Дата:\s*([^\s·]+)/);
+              const timeMatch   = commentText.match(/Время:\s*([\d:–\s]+)/);
+              const noteMatch   = commentText.match(/Комментарий:\s*(.+)/);
+
+              const pickupDate = dateMatch?.[1]
+                ? new Date(dateMatch[1]).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
+                : null;
+              const pickupTime = timeMatch?.[1]?.trim() || null;
+              const customerNote = noteMatch?.[1]?.trim() || null;
+
+              return (
+                <div className="ocard" key={o.id}>
+                  <div className="ocard-head">
+                    <div>
+                      <div className="ocard-num">{o.public_id || `#${o.order_number}`}</div>
+                      <div className="ocard-meta">от {createdDate}</div>
+                    </div>
+                    <span className={`sbadge ${STATUS_CLASSES[o.status] || 'sb-new'}`}>
+                      {STATUS_LABELS[o.status] || 'Новый'}
+                    </span>
+                  </div>
+
+                  {!isCancelled && (
+                    <div className="oprog">
+                      {PROGRESS_LABELS.map((label, i) => (
+                        <div key={i} className={`opstep ${i + 1 < step ? 'done' : ''} ${i + 1 === step ? 'cur' : ''}`}>
+                          <div className="opstep-dot">{i + 1 < step ? '✓' : i + 1}</div>
+                          <div className="opstep-lbl">{label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {(pickupDate || pickupTime || o.delivery_address) && (
+                    <div className="opickup">
+                      {o.delivery_address && (
+                        <div className="opickup-row">
+                          <span>📍</span>
+                          <span>{o.delivery_address}</span>
+                        </div>
+                      )}
+                      {(pickupDate || pickupTime) && (
+                        <div className="opickup-row">
+                          <span>🕐</span>
+                          <span>{[pickupDate, pickupTime].filter(Boolean).join(', ')}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="oitems">
+                    {(o.items || []).map((item, idx) => (
+                      <span key={idx} className="oitem-chip">
+                        {item.emoji || '📦'} {item.name || 'Товар'} ×{item.q || item.quantity || 1}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="ocard-foot">
+                    <div>
+                      <div className="o-total">{Number(o.total_amount).toLocaleString('ru-RU')} ₽</div>
+                      {o.customer_name && (
+                        <div className="o-meta">{o.customer_name}{o.customer_phone ? ` · ${o.customer_phone}` : ''}</div>
+                      )}
+                      {customerNote && (
+                        <div className="o-meta" style={{ fontStyle: 'italic' }}>💬 {customerNote}</div>
+                      )}
+                    </div>
+                    <button type="button" className="btn-solid btn-repeat" onClick={() => handleRepeatOrder(o)}>
+                      Повторить заказ
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}
+
+export default OrdersPage;
+
+
+=== 6. ФРОНТЕНД: СТРАНИЦА ОФОРМЛЕНИЯ ЗАКАЗА (React.js - CheckoutPage.jsx) ===
+
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import useCartStore from '../store/useCartStore';
+import ApiStorage from '../api/ApiStorage';
+import useAuthStore from '../store/useAuthStore';
+import { PhoneInput } from '../components/ui/PhoneInput';
+import './CheckoutPage.css';
+
+function buildTimeSlots(start, end) {
+  if (!start || !end) return [];
+
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+
+  const startMin = sh * 60 + sm;
+  const endMin   = eh * 60 + em;
+  const slots    = [];
+
+  for (let t = startMin; t + 15 <= endMin; t += 15) {
+    const from = `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+    const to   = `${String(Math.floor((t + 15) / 60)).padStart(2, '0')}:${String((t + 15) % 60).padStart(2, '0')}`;
+    slots.push({ label: `${from} – ${to}` });
+  }
+  return slots;
+}
+
+function CheckoutPage() {
+  const navigate = useNavigate();
+  const { items, clearCart } = useCartStore();
+
+  const user = useAuthStore((state) => state.user);
+  const isAuthLoading = useAuthStore((state) => state.isLoading);
+
+  const [warehouses, setWarehouses] = useState([]);
+  const [products, setProducts]   = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError]         = useState('');
+
+  const today = new Date().toISOString().split('T')[0];
+
+  const [selWarehouse, setSelWarehouse] = useState(null);
+  const [selDate, setSelDate]     = useState(today);
+  const [selTime, setSelTime]     = useState('');
+
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName]   = useState('');
+  const [phone, setPhone]         = useState('');
+  const [comment, setComment]     = useState('');
+
+  useEffect(() => {
+    if (!isAuthLoading && !user) {
+      navigate('/auth?redirect=/checkout');
+    }
+  }, [user, isAuthLoading, navigate]);
+
+  useEffect(() => {
+    if (user) {
+      const timer = setTimeout(() => {
+        setFirstName(user.first_name || user.name || '');
+        setLastName(user.last_name || user.lastname || '');
+        setPhone(user.phone || '');
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const loadAll = async () => {
+      try {
+        const [whRes, prodRes] = await Promise.all([
+          ApiStorage.warehouses.getAll().catch(() => []),
+          ApiStorage.catalog.getProducts().catch(() => []),
+        ]);
+
+        const whs = Array.isArray(whRes) ? whRes : [];
+        setWarehouses(whs);
+        if (whs.length > 0) setSelWarehouse(whs[0]);
+
+        setProducts(Array.isArray(prodRes) ? prodRes : []);
+      } catch (e) {
+        console.error('Checkout load error:', e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAll();
+  }, [today]);
+
+  const cartEntries = useMemo(() => {
+    return Object.entries(items).map(([id, quantity]) => {
+      const product = products.find((p) => String(p.id) === String(id));
+      return { id, quantity, product };
+    });
+  }, [items, products]);
+
+  const totalSum = useMemo(() => {
+    return cartEntries.reduce((sum, { quantity, product }) => {
+      return sum + (Number(product?.price) || 0) * quantity;
+    }, 0);
+  }, [cartEntries]);
+
+  const timeSlots = useMemo(() => {
+    if (!selWarehouse) return [];
+    return buildTimeSlots(
+      selWarehouse.working_hours_start,
+      selWarehouse.working_hours_end
+    );
+  }, [selWarehouse]);
+
+  const handleWarehouseSelect = (wh) => {
+    setSelWarehouse(wh);
+    setSelTime('');
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!selWarehouse) return setError('Выберите склад самовывоза');
+    if (!selDate)      return setError('Укажите дату получения');
+    if (!selTime)      return setError('Выберите время получения');
+    if (cartEntries.length === 0) return setError('Корзина пуста');
+
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      const orderItems = cartEntries
+        .filter(({ product }) => product)
+        .map(({ id, quantity, product }) => ({
+          id,
+          quantity,
+          price_at_purchase: Number(product.price) || 0,
+        }));
+
+      const payload = {
+        items:           orderItems,
+        total_amount:    totalSum,
+        warehouse_code:  selWarehouse.warehouse_code,
+        customer_name:   `${firstName} ${lastName}`.trim() || undefined,
+        customer_phone:  phone || undefined,
+        comment:         [
+          `Дата: ${selDate}`,
+          `Время: ${selTime}`,
+          comment ? `Комментарий: ${comment}` : null,
+        ].filter(Boolean).join(' · '),
+      };
+
+      const result = await ApiStorage.orders.create(payload);
+      clearCart();
+      navigate('/orders', { state: { successPublicId: result.public_id } });
+    } catch (e) {
+      setError(e.message || 'Ошибка при создании заказа');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isLoading || isAuthLoading) {
+    return (
+      <div className="co-page">
+        <div style={{ padding: '36px 48px', color: 'var(--ink3)' }}>Загрузка...</div>
+      </div>
+    );
+  }
+
+  if (cartEntries.length === 0 && !isLoading) {
+    return (
+      <div className="co-page">
+        <div className="empty-state" style={{ marginTop: '80px' }}>
+          <div className="empty-icon">🛒</div>
+          <div className="empty-ttl">Корзина пуста</div>
+          <p style={{ marginBottom: '28px', color: 'var(--ink3)' }}>Добавьте товары из каталога</p>
+          <button
+            className="btn-solid"
+            style={{ padding: '12px 32px', fontSize: '15px', borderRadius: '10px' }}
+            onClick={() => navigate('/catalogue')}
+          >
+            Открыть каталог
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="co-page">
+      <div style={{ padding: '36px 48px 0' }}>
+        <span
+          style={{ cursor: 'pointer', color: 'var(--ink3)', fontSize: '14px' }}
+          onClick={() => navigate('/cart')}
+        >
+          ← Назад в корзину
+        </span>
+        <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '48px', letterSpacing: '0.5px', marginTop: '8px' }}>
+          Оформление заказа
+        </h1>
+      </div>
+
+      <div className="co-layout">
+        <div>
+          <div className="scard">
+            <div className="scard-num">1</div>
+            <div className="scard-title">Склад самовывоза</div>
+            {warehouses.length === 0 ? (
+              <div style={{ color: 'var(--ink3)', fontSize: '14px' }}>
+                Нет доступных складов. Пожалуйста, свяжитесь с нами.
+              </div>
+            ) : (
+              <div className="addr-list">
+                {warehouses.map((wh) => (
+                  <div
+                    key={wh.id}
+                    className={`aopt ${selWarehouse?.id === wh.id ? 'on' : ''}`}
+                    onClick={() => handleWarehouseSelect(wh)}
+                  >
+                    <div className="aopt-radio">
+                      <div className="aopt-dot" />
+                    </div>
+                    <div>
+                      <div className="aopt-name">{wh.city ? `${wh.city} — ` : ''}{wh.name}</div>
+                      <div className="aopt-street">{wh.address}</div>
+                      {wh.phone && (
+                        <div className="aopt-note">{wh.phone}</div>
+                      )}
+                      {wh.working_hours_start && wh.working_hours_end && (
+                        <div className="aopt-hours">
+                          🕐 {wh.working_hours_start.slice(0, 5)} – {wh.working_hours_end.slice(0, 5)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="scard">
+            <div className="scard-num">2</div>
+            <div className="scard-title">Дата и время получения</div>
+            <div className="fg">
+              <label className="flbl">Дата</label>
+              <input
+                type="date"
+                id="checkout-date"
+                className="finp"
+                value={selDate}
+                min={today}
+                onChange={(e) => { setSelDate(e.target.value); setSelTime(''); }}
+                style={{ maxWidth: '220px' }}
+              />
+            </div>
+
+            {timeSlots.length > 0 ? (
+              <>
+                <label className="flbl" style={{ display: 'block', marginBottom: '10px' }}>
+                  Доступные временны́е слоты (15 мин)
+                </label>
+                <div className="time-grid">
+                  {timeSlots.map((slot) => (
+                    <div
+                      key={slot.label}
+                      className={`tslot ${selTime === slot.label ? 'on' : ''}`}
+                      onClick={() => setSelTime(slot.label)}
+                    >
+                      {slot.label}
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div style={{ color: 'var(--ink3)', fontSize: '14px' }}>
+                {selWarehouse
+                  ? 'Часы работы склада не указаны'
+                  : 'Выберите склад для просмотра слотов'}
+              </div>
+            )}
+
+            {selTime && (
+              <div className="sel-time-badge">
+                ✓ Выбрано: <strong>{selTime}</strong>
+              </div>
+            )}
+          </div>
+
+          <div className="scard">
+            <div className="scard-num">3</div>
+            <div className="scard-title">Контактные данные</div>
+
+            {user && (
+              <div className="co-user-hint">
+                👤 Данные заполнены из вашего профиля
+              </div>
+            )}
+
+            <div className="frow">
+              <div className="fg">
+                <label className="flbl" htmlFor="co-first-name">Имя</label>
+                <input
+                  id="co-first-name"
+                  className="finp"
+                  placeholder="Иван"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                />
+              </div>
+              <div className="fg">
+                <label className="flbl" htmlFor="co-last-name">Фамилия</label>
+                <input
+                  id="co-last-name"
+                  className="finp"
+                  placeholder="Иванов"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                />
+              </div>
+            </div>
+            <PhoneInput
+              label="Телефон"
+              value={phone}
+              onChange={setPhone}
+            />
+            <div className="fg">
+              <label className="flbl" htmlFor="co-comment">Комментарий</label>
+              <textarea
+                id="co-comment"
+                className="finp"
+                rows="3"
+                placeholder="Дополнительная информация..."
+                style={{ resize: 'vertical' }}
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div className="csum">
+            <div className="csum-title">Ваш заказ</div>
+
+            <div id="co-items">
+              {cartEntries.map(({ id, quantity, product }) => {
+                const price = Number(product?.price) || 0;
+                return (
+                  <div key={id} className="crow">
+                    <span className="crow-lbl">
+                      {product?.emoji || '📦'} {product?.name || `ID: ${id}`} ×{quantity}
+                    </span>
+                    <span className="crow-val">{price * quantity} ₽</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {(selWarehouse || selDate || selTime) && (
+              <div className="co-pickup-summary">
+                {selWarehouse && (
+                  <div className="pickup-row">
+                    <span>📍</span>
+                    <span>{selWarehouse.city ? `${selWarehouse.city}, ` : ''}{selWarehouse.name}</span>
+                  </div>
+                )}
+                {selDate && selTime && (
+                  <div className="pickup-row">
+                    <span>🕐</span>
+                    <span>{new Date(selDate).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}, {selTime}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div id="co-rows">
+              <div className="crow" style={{ borderTop: '1px solid var(--bg2)', marginTop: '8px', paddingTop: '14px' }}>
+                <span className="crow-lbl" style={{ fontWeight: 700 }}>К оплате</span>
+                <span className="crow-total">{totalSum} ₽</span>
+              </div>
+            </div>
+
+            {error && (
+              <div className="co-error">{error}</div>
+            )}
+
+            <button
+              id="checkout-submit-btn"
+              className="btn-full btn-full-main"
+              onClick={handlePlaceOrder}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Оформляем...' : 'Оформить заказ'}
+            </button>
+            <button
+              className="btn-full btn-full-out"
+              style={{ marginTop: '8px' }}
+              onClick={() => navigate('/cart')}
+              disabled={isSubmitting}
+            >
+              ← Изменить корзину
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default CheckoutPage;
+
+
+=== 7. МОБИЛЬНОЕ ПРИЛОЖЕНИЕ: ЭКРАН КОРЗИНЫ (Kotlin Compose - CartScreen.kt) ===
+
+package com.list.mobile.ui.screens
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
+import com.list.mobile.data.local.CartEntity
+import com.list.mobile.data.remote.Product
+import com.list.mobile.data.repository.AppRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class CartViewModel @Inject constructor(private val repo: AppRepository) : ViewModel() {
+    val cartItems = repo.cartItems
+    var products by mutableStateOf<List<Product>>(emptyList())
+        private set
+
+    init {
+        loadProducts()
+    }
+
+    fun loadProducts() {
+        viewModelScope.launch {
+            try {
+                val res = repo.getProducts()
+                if (res.isSuccessful) {
+                    products = res.body() ?: emptyList()
+                }
+            } catch (e: Exception) {
+            }
+        }
+    }
+
+    fun updateQuantity(id: String, current: Int, change: Int) {
+        if (current + change <= 0) {
+            viewModelScope.launch { repo.removeFromCart(id) }
+        } else {
+            val product = products.find { it.id == id }
+            if (product != null && change > 0 && current + change > product.stock_quantity) {
+                return
+            }
+            viewModelScope.launch { repo.updateCartQuantity(id, change) }
+        }
+    }
+    
+    fun removeItem(id: String) {
+        viewModelScope.launch { repo.removeFromCart(id) }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CartScreen(navController: NavController, viewModel: CartViewModel = hiltViewModel()) {
+    val items by viewModel.cartItems.collectAsState(initial = emptyList())
+    val total = items.sumOf { it.price * it.quantity }
+    val hasValidationErrors = items.any { item ->
+        val product = viewModel.products.find { it.id == item.productId }
+        product != null && (item.quantity > product.stock_quantity || product.stock_quantity == 0)
+    }
+
+    Scaffold(
+        topBar = {
+            Column {
+                TopAppBar(
+                    title = { Text("Корзина", style = MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)) },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.navigateUp() }) {
+                            Text("⬅️")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 1.dp)
+            }
+        },
+        bottomBar = {
+            if (items.isNotEmpty()) {
+                Column {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 1.dp)
+                    Surface(
+                        color = MaterialTheme.colorScheme.surface,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Итого: $total ₽", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                            Button(
+                                onClick = { navController.navigate("checkout") },
+                                enabled = !hasValidationErrors,
+                                shape = MaterialTheme.shapes.small,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                )
+                            ) {
+                                Text(
+                                    text = if (hasValidationErrors) "Ошибка остатков" else "Оформить",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ) { padding ->
+        LazyColumn(modifier = Modifier.padding(padding)) {
+            items(items) { item ->
+                val product = viewModel.products.find { it.id == item.productId }
+                val stockText = if (product != null) {
+                    if (product.stock_quantity == 0) "Нет в наличии" else "Доступно: ${product.stock_quantity} шт."
+                } else {
+                    ""
+                }
+                val isOverStock = product != null && item.quantity > product.stock_quantity
+                val isMaxLimit = product != null && item.quantity >= product.stock_quantity
+
+                Card(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp).fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium,
+                    border = BorderStroke(
+                        width = 1.5.dp,
+                        color = if (isOverStock) Color(0xFF9B2020) else MaterialTheme.colorScheme.outline
+                    ),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isOverStock) Color(0xFFFFEBEE) else MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(60.dp)
+                                .background(
+                                    color = Color.LightGray,
+                                    shape = RoundedCornerShape(8.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(item.emoji ?: "📦", style = TextStyle(fontSize = 32.sp))
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(item.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                            Text(
+                                text = "${item.price} ₽",
+                                style = MaterialTheme.typography.titleMedium.copy(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                            )
+                            if (stockText.isNotEmpty()) {
+                                Text(
+                                    text = stockText,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (product?.stock_quantity == 0 || isOverStock) Color(0xFF9B2020) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+                            }
+                        }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                        ) {
+                            IconButton(
+                                onClick = { viewModel.updateQuantity(item.productId, item.quantity, -1) },
+                                modifier = Modifier.size(36.dp)
+                            ) { 
+                                Text("-", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) 
+                            }
+                            Text(
+                                text = item.quantity.toString(),
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            )
+                            IconButton(
+                                onClick = { viewModel.updateQuantity(item.productId, item.quantity, 1) },
+                                enabled = !isMaxLimit,
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Text(
+                                    text = "+",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = if (isMaxLimit) Color.LightGray else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        IconButton(
+                            onClick = { viewModel.removeItem(item.productId) },
+                            modifier = Modifier.size(36.dp)
+                        ) { 
+                            Text("🗑") 
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+=== 8. МОБИЛЬНОЕ ПРИЛОЖЕНИЕ: ЭКРАН ОФОРМЛЕНИЯ ЗАКАЗА (Kotlin Compose - CheckoutScreen.kt) ===
+
+package com.list.mobile.ui.screens
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
+import com.list.mobile.data.remote.OrderItemRequest
+import com.list.mobile.data.remote.OrderRequest
+import com.list.mobile.data.remote.Warehouse
+import com.list.mobile.data.repository.AppRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class CheckoutViewModel @Inject constructor(private val repo: AppRepository) : ViewModel() {
+    var warehouses by mutableStateOf<List<Warehouse>>(emptyList())
+    var selectedWarehouse by mutableStateOf<Warehouse?>(null)
+    var pickupDate by mutableStateOf("")
+    var pickupTime by mutableStateOf("")
+    
+    var firstName by mutableStateOf("")
+    var lastName by mutableStateOf("")
+    var phone by mutableStateOf("")
+    var comment by mutableStateOf("")
+    
+    var error by mutableStateOf<String?>(null)
+    var isLoading by mutableStateOf(false)
+    var isSubmitting by mutableStateOf(false)
+
+    init {
+        loadWarehouses()
+        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+        pickupDate = sdf.format(java.util.Date())
+    }
+
+    fun loadWarehouses() {
+        error = null
+        isLoading = true
+        viewModelScope.launch {
+            try {
+                val res = repo.getWarehouses()
+                if (res.isSuccessful) {
+                    warehouses = res.body() ?: emptyList()
+                    selectedWarehouse = warehouses.firstOrNull()
+                } else {
+                    error = "Ошибка загрузки пунктов выдачи: ${res.code()}"
+                }
+            } catch (e: Exception) {
+                error = "Ошибка подключения: ${e.localizedMessage ?: e.message}"
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    fun submitOrder(onSuccess: () -> Unit) {
+        error = null
+        isSubmitting = true
+        viewModelScope.launch {
+            val cart = repo.cartItems.first()
+            if (selectedWarehouse != null && pickupDate.isNotBlank() && pickupTime.isNotBlank() && cart.isNotEmpty()) {
+                val formattedComment = listOfNotNull(
+                    "Дата: $pickupDate",
+                    "Время: $pickupTime",
+                    if (comment.isNotBlank()) "Комментарий: $comment" else null
+                ).joinToString(" · ")
+
+                val req = OrderRequest(
+                    warehouse_code = selectedWarehouse!!.warehouse_code,
+                    total_amount = cart.sumOf { it.price * it.quantity },
+                    comment = formattedComment,
+                    customer_name = "${firstName.trim()} ${lastName.trim()}".trim().ifBlank { null },
+                    customer_phone = phone.trim().ifBlank { null },
+                    items = cart.map { OrderItemRequest(id = it.productId, quantity = it.quantity, price_at_purchase = it.price) }
+                )
+                try {
+                    val res = repo.createOrder(req)
+                    if (res.isSuccessful) {
+                        repo.clearCart()
+                        onSuccess()
+                    } else {
+                        error = "Ошибка оформления заказа: ${res.code()}"
+                    }
+                } catch (e: Exception) {
+                    error = "Ошибка отправки заказа: ${e.localizedMessage ?: e.message}"
+                } finally {
+                    isSubmitting = false
+                }
+            } else {
+                isSubmitting = false
+                if (cart.isEmpty()) {
+                    error = "Корзина пуста"
+                } else if (selectedWarehouse == null) {
+                    error = "Выберите пункт выдачи"
+                } else if (pickupDate.isBlank()) {
+                    error = "Укажите дату получения"
+                } else if (pickupTime.isBlank()) {
+                    error = "Укажите время получения"
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CheckoutScreen(navController: NavController, viewModel: CheckoutViewModel = hiltViewModel()) {
+    var expanded by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val calendar = java.util.Calendar.getInstance()
+    
+    val datePickerDialog = android.app.DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            val formattedMonth = String.format("%02d", month + 1)
+            val formattedDay = String.format("%02d", dayOfMonth)
+            viewModel.pickupDate = "$year-$formattedMonth-$formattedDay"
+        },
+        calendar.get(java.util.Calendar.YEAR),
+        calendar.get(java.util.Calendar.MONTH),
+        calendar.get(java.util.Calendar.DAY_OF_MONTH)
+    )
+
+    val timePickerDialog = android.app.TimePickerDialog(
+        context,
+        { _, hourOfDay, minute ->
+            val formattedHour = String.format("%02d", hourOfDay)
+            val formattedMinute = String.format("%02d", minute)
+            viewModel.pickupTime = "$formattedHour:$formattedMinute"
+        },
+        calendar.get(java.util.Calendar.HOUR_OF_DAY),
+        calendar.get(java.util.Calendar.MINUTE),
+        true
+    )
+
+    Scaffold(
+        topBar = {
+            Column {
+                TopAppBar(
+                    title = { Text("Оформление", style = MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)) },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.navigateUp() }) {
+                            Text("⬅️")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 1.dp)
+            }
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
+        ) {
+            Text("1. Пункт выдачи самовывоза", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            Spacer(Modifier.height(8.dp))
+            ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
+                OutlinedTextField(
+                    value = viewModel.selectedWarehouse?.address ?: "Выберите пункт",
+                    onValueChange = {}, 
+                    readOnly = true, 
+                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    shape = MaterialTheme.shapes.small
+                )
+                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    viewModel.warehouses.forEach { wh ->
+                        DropdownMenuItem(text = { Text(wh.address) }, onClick = { viewModel.selectedWarehouse = wh; expanded = false })
+                    }
+                }
+            }
+            
+            Spacer(Modifier.height(20.dp))
+            
+            Text("2. Дата и время получения", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                value = viewModel.pickupDate,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Дата получения") },
+                trailingIcon = {
+                    IconButton(onClick = { datePickerDialog.show() }) {
+                        Text("📅")
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { datePickerDialog.show() },
+                shape = MaterialTheme.shapes.small
+            )
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = viewModel.pickupTime,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Время получения") },
+                trailingIcon = {
+                    IconButton(onClick = { timePickerDialog.show() }) {
+                        Text("🕐")
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { timePickerDialog.show() },
+                shape = MaterialTheme.shapes.small
+            )
+            
+            Spacer(Modifier.height(20.dp))
+            
+            Text("3. Контактные данные получателя", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                value = viewModel.firstName,
+                onValueChange = { viewModel.firstName = it },
+                label = { Text("Имя") },
+                placeholder = { Text("Иван") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.small
+            )
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = viewModel.lastName,
+                onValueChange = { viewModel.lastName = it },
+                label = { Text("Фамилия") },
+                placeholder = { Text("Иванов") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.small
+            )
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = viewModel.phone,
+                onValueChange = { viewModel.phone = it },
+                label = { Text("Телефон") },
+                placeholder = { Text("+7 (900) 123-45-67") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.small
+            )
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = viewModel.comment,
+                onValueChange = { viewModel.comment = it },
+                label = { Text("Комментарий к заказу") },
+                placeholder = { Text("Дополнительная информация...") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.small,
+                maxLines = 3
+            )
+            
+            Spacer(Modifier.height(20.dp))
+            
+            viewModel.error?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(vertical = 8.dp))
+            }
+            
+            if (viewModel.isLoading || viewModel.isSubmitting) {
+                CircularProgressIndicator(modifier = Modifier.padding(vertical = 8.dp))
+            }
+            
+            Spacer(Modifier.height(8.dp))
+            Button(
+                onClick = { viewModel.submitOrder { navController.navigate("catalog") { popUpTo(0) } } }, 
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !viewModel.isLoading && !viewModel.isSubmitting,
+                shape = MaterialTheme.shapes.small,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text("Подтвердить заказ", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary))
+            }
+            
+            if (viewModel.error != null && viewModel.warehouses.isEmpty() && !viewModel.isLoading) {
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = { viewModel.loadWarehouses() }, 
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text("Повторить загрузку складов")
+                }
+            }
+        }
+    }
+}

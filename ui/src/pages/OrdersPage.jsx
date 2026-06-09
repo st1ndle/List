@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ApiStorage from '../api/ApiStorage';
+import useCartStore from '../store/useCartStore';
+import useToastStore from '../store/useToastStore';
 import './OrdersPage.css';
 
 // ─── Конфиг статусов ──────────────────────────────────────────────────────────
@@ -13,10 +15,27 @@ const PROGRESS_LABELS = ['Принят', 'Обработка', 'Готов', 'В
 function OrdersPage() {
   const navigate  = useNavigate();
   const location  = useLocation();
+  const { addMultiple } = useCartStore();
+  const { showToast } = useToastStore();
 
   const [orders,  setOrders]  = useState([]);
   const [loading, setLoading] = useState(true);
   const [authErr, setAuthErr] = useState(false);
+
+  const handleRepeatOrder = (order) => {
+    if (!order.items || order.items.length === 0) return;
+
+    const itemsMap = {};
+    order.items.forEach(item => {
+      if (item.id) {
+        itemsMap[item.id] = (itemsMap[item.id] || 0) + item.q;
+      }
+    });
+
+    addMultiple(itemsMap);
+    showToast('🛒', 'Товары из заказа добавлены в корзину');
+    navigate('/cart');
+  };
 
   // Успешный публичный ID заказа, переданный из CheckoutPage
   const successPublicId = location.state?.successPublicId;
@@ -208,6 +227,13 @@ function OrdersPage() {
                         <div className="o-meta" style={{ fontStyle: 'italic' }}>💬 {customerNote}</div>
                       )}
                     </div>
+                    <button
+                      type="button"
+                      className="btn-solid btn-repeat"
+                      onClick={() => handleRepeatOrder(o)}
+                    >
+                      Повторить заказ
+                    </button>
                   </div>
                 </div>
               );

@@ -827,6 +827,24 @@ function handleContactFormSubmit() {
 // ═══ CALCULATOR ═══
 
 /**
+ * Выбор типа паллета через кнопки-чипы
+ */
+function selectPalletType(value, btnEl) {
+  const input = document.getElementById('pal-type');
+  if (input) {
+    input.value = value;
+  }
+  
+  if (btnEl && btnEl.parentNode) {
+    const chips = btnEl.parentNode.querySelectorAll('.pallet-chip');
+    chips.forEach(chip => chip.classList.remove('active'));
+    btnEl.classList.add('active');
+  }
+  
+  calculateStoragePrice();
+}
+
+/**
  * Рассчитывает ориентировочную стоимость хранения паллет
  */
 function calculateStoragePrice() {

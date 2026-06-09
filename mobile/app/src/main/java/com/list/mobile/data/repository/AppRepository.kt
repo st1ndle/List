@@ -26,6 +26,7 @@ class AppRepository @Inject constructor(
     suspend fun getWarehouses() = api.getWarehouses()
     suspend fun createOrder(req: OrderRequest) = api.createOrder(req)
     suspend fun getOrderHistory() = api.getOrderHistory()
+    suspend fun getProfile() = api.getProfile()
 
     suspend fun addToCart(product: Product) {
         cartDao.insertItem(CartEntity(product.id, product.name, product.price, 1, product.emoji, product.bg_color))

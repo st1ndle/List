@@ -44,6 +44,14 @@ const useCartStore = create(
 
       clearCart: () => set({ items: {} }),
 
+      addMultiple: (newItems) => set((state) => {
+        const nextItems = { ...state.items };
+        for (const [id, qty] of Object.entries(newItems)) {
+          nextItems[id] = (nextItems[id] || 0) + qty;
+        }
+        return { items: nextItems };
+      }),
+
       getCartItemsCount: () => {
         const state = get();
         return Object.keys(state.items).length;

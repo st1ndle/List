@@ -1,11 +1,13 @@
 package com.list.mobile.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -65,7 +67,22 @@ class HistoryViewModel @Inject constructor(private val repo: AppRepository) : Vi
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(navController: NavController, viewModel: HistoryViewModel = hiltViewModel()) {
-    Scaffold(topBar = { TopAppBar(title = { Text("История заказов") }) }) { padding ->
+    Scaffold(
+        topBar = {
+            Column {
+                TopAppBar(
+                    title = { Text("История заказов", style = MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)) },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.navigateUp() }) {
+                            Text("⬅️")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 1.dp)
+            }
+        }
+    ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             if (viewModel.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -81,17 +98,37 @@ fun HistoryScreen(navController: NavController, viewModel: HistoryViewModel = hi
                     }
                 }
             } else {
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(vertical = 8.dp)
+                ) {
                     items(viewModel.orders) { order ->
-                        Card(modifier = Modifier.padding(8.dp).fillMaxWidth()) {
+                        Card(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp).fillMaxWidth(),
+                            shape = MaterialTheme.shapes.medium,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
                             Column(Modifier.padding(16.dp)) {
-                                Text("Заказ #${order.public_id}", style = MaterialTheme.typography.titleMedium)
-                                Text("Статус: ${order.status}")
-                                Text("Сумма: ${order.total_amount} ₽")
-                                Text("Дата: ${order.created_at}")
+                                Text("Заказ #${order.public_id}", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
                                 Spacer(Modifier.height(8.dp))
-                                Button(onClick = { viewModel.repeatOrder(order) { navController.navigate("cart") } }) {
-                                    Text("Повторить заказ")
+                                Text("Статус: ${order.status}", style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    text = "Сумма: ${order.total_amount} ₽",
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                                )
+                                Text("Дата: ${order.created_at}", style = MaterialTheme.typography.bodySmall)
+                                Spacer(Modifier.height(12.dp))
+                                Button(
+                                    onClick = { viewModel.repeatOrder(order) { navController.navigate("cart") } },
+                                    shape = MaterialTheme.shapes.small,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                ) {
+                                    Text("Повторить заказ", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary))
                                 }
                             }
                         }

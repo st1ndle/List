@@ -170,6 +170,17 @@ app.use(session({
   },
 }));
 
+// Middleware для трансляции Authorization: Bearer <token> (userId) в сессию для мобильного приложения
+app.use((req, res, next) => {
+  if (!req.session.userId && req.headers.authorization) {
+    const parts = req.headers.authorization.split(' ');
+    if (parts.length === 2 && parts[0] === 'Bearer') {
+      req.session.userId = parts[1];
+    }
+  }
+  next();
+});
+
 // ── Регистрация маршрутов (роутов) ────────────────────────────────────────────
 //
 // app.use(prefix, router) — все запросы, начинающиеся с prefix, передаются в router.

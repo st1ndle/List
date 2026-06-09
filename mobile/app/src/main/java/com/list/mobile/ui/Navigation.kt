@@ -31,5 +31,7 @@ fun Navigation() {
         composable("cart") { CartScreen(navController) }
         composable("checkout") { CheckoutScreen(navController) }
         composable("history") { HistoryScreen(navController) }
+        composable("profile") { ProfileScreen(navController) }
+        composable("info") { InfoScreen(navController) }
     }
 }

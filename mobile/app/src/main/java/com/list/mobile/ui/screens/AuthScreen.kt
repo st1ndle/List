@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -47,21 +48,68 @@ class AuthViewModel @Inject constructor(private val repo: AppRepository) : ViewM
 
 @Composable
 fun AuthScreen(navController: NavController, viewModel: AuthViewModel = hiltViewModel()) {
-    Column(modifier = Modifier.padding(16.dp).fillMaxSize(), verticalArrangement = Arrangement.Center) {
-        Text(if (viewModel.isRegister) "Регистрация" else "Вход", style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(16.dp))
+    Column(
+        modifier = Modifier
+            .padding(24.dp)
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = if (viewModel.isRegister) "Регистрация" else "Вход",
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
+        )
+        Spacer(Modifier.height(24.dp))
         if (viewModel.isRegister) {
-            OutlinedTextField(value = viewModel.name, onValueChange = { viewModel.name = it }, label = { Text("Имя") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(
+                value = viewModel.name,
+                onValueChange = { viewModel.name = it },
+                label = { Text("Имя") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.small
+            )
+            Spacer(Modifier.height(12.dp))
         }
-        OutlinedTextField(value = viewModel.email, onValueChange = { viewModel.email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = viewModel.password, onValueChange = { viewModel.password = it }, label = { Text("Пароль") }, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(16.dp))
-        Button(onClick = { viewModel.authenticate { navController.navigate("catalog") { popUpTo("auth") { inclusive = true } } } }, modifier = Modifier.fillMaxWidth()) {
-            Text(if (viewModel.isRegister) "Зарегистрироваться" else "Войти")
+        OutlinedTextField(
+            value = viewModel.email,
+            onValueChange = { viewModel.email = it },
+            label = { Text("Email") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.small
+        )
+        Spacer(Modifier.height(12.dp))
+        OutlinedTextField(
+            value = viewModel.password,
+            onValueChange = { viewModel.password = it },
+            label = { Text("Пароль") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.small
+        )
+        Spacer(Modifier.height(24.dp))
+        Button(
+            onClick = { viewModel.authenticate { navController.navigate("catalog") { popUpTo("auth") { inclusive = true } } } },
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.small,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
+        ) {
+            Text(
+                text = if (viewModel.isRegister) "Зарегистрироваться" else "Войти",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+            )
         }
+        Spacer(Modifier.height(8.dp))
         TextButton(onClick = { viewModel.isRegister = !viewModel.isRegister }) {
-            Text(if (viewModel.isRegister) "Уже есть аккаунт? Войти" else "Нет аккаунта? Регистрация")
+            Text(
+                text = if (viewModel.isRegister) "Уже есть аккаунт? Войти" else "Нет аккаунта? Регистрация",
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+            )
         }
-        viewModel.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        viewModel.error?.let { 
+            Spacer(Modifier.height(8.dp))
+            Text(it, color = MaterialTheme.colorScheme.error) 
+        }
     }
 }

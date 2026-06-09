@@ -2124,3 +2124,39 @@ footer {
 .ani {
   animation: fin .45s ease both
 }
+
+/* ── PALLET TYPE CHIPS ── */
+.pallet-chips {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+.pallet-chip {
+  flex: 1;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  font-family: inherit;
+}
+
+.pallet-chip:hover {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.pallet-chip.active {
+  background: var(--green-light);
+  border-color: var(--green);
+  color: var(--green);
+  font-weight: 600;
+}
+

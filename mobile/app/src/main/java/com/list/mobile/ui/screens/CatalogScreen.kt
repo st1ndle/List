@@ -1,5 +1,6 @@
 package com.list.mobile.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -10,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -18,6 +20,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.list.mobile.data.remote.Category
 import com.list.mobile.data.remote.Product
+import com.list.mobile.data.remote.Warehouse
 import com.list.mobile.data.repository.AppRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -58,6 +61,9 @@ class CatalogViewModel @Inject constructor(private val repo: AppRepository) : Vi
     var error by mutableStateOf<String?>(null)
     var isLoading by mutableStateOf(false)
 
+    var warehouses by mutableStateOf<List<Warehouse>>(emptyList())
+    var showWarehousesDialog by mutableStateOf(false)
+
     init {
         loadData()
     }
@@ -74,6 +80,12 @@ class CatalogViewModel @Inject constructor(private val repo: AppRepository) : Vi
                 } else {
                     error = "Ошибка загрузки категорий: ${catRes.code()}"
                     isLoading = false
+                }
+                
+                // Fetch warehouses in background
+                val whRes = repo.getWarehouses()
+                if (whRes.isSuccessful) {
+                    warehouses = whRes.body() ?: emptyList()
                 }
             } catch (e: Exception) {
                 error = "Ошибка подключения: ${e.localizedMessage ?: e.message}"
@@ -116,28 +128,46 @@ class CatalogViewModel @Inject constructor(private val repo: AppRepository) : Vi
 fun CatalogScreen(navController: NavController, viewModel: CatalogViewModel = hiltViewModel()) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Каталог") },
-                actions = {
-                    IconButton(onClick = { navController.navigate("cart") }) { Text("🛒") }
-                    IconButton(onClick = { navController.navigate("history") }) { Text("📜") }
-                    IconButton(onClick = { 
-                        viewModel.logout()
-                        navController.navigate("auth") { popUpTo(0) }
-                    }) { Text("🚪") }
-                }
-            )
+            Column {
+                TopAppBar(
+                    title = { Text("Каталог", style = MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)) },
+                    actions = {
+                        IconButton(onClick = { viewModel.showWarehousesDialog = true }) { Text("🏢") }
+                        IconButton(onClick = { navController.navigate("info") }) { Text("ℹ️") }
+                        IconButton(onClick = { navController.navigate("cart") }) { Text("🛒") }
+                        IconButton(onClick = { navController.navigate("history") }) { Text("📜") }
+                        IconButton(onClick = { navController.navigate("profile") }) { Text("👤") }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 1.dp)
+            }
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
-            ScrollableTabRow(
-                selectedTabIndex = viewModel.categories.indexOfFirst { it.id == viewModel.selectedCategory }.coerceAtLeast(0).let { if (viewModel.selectedCategory == null) 0 else it + 1 }
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(vertical = 12.dp, horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Tab(selected = viewModel.selectedCategory == null, onClick = { viewModel.loadProducts(null) }, text = { Text("Все") })
-                viewModel.categories.forEachIndexed { index, cat ->
-                    Tab(selected = viewModel.selectedCategory == cat.id, onClick = { viewModel.loadProducts(cat.id) }, text = { Text(cat.name) })
+                item {
+                    CategoryPill(
+                        text = "Все",
+                        isSelected = viewModel.selectedCategory == null,
+                        onClick = { viewModel.loadProducts(null) }
+                    )
+                }
+                items(viewModel.categories) { cat ->
+                    CategoryPill(
+                        text = cat.name,
+                        isSelected = viewModel.selectedCategory == cat.id,
+                        onClick = { viewModel.loadProducts(cat.id) }
+                    )
                 }
             }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 1.dp)
             
             Box(modifier = Modifier.fillMaxSize()) {
                 if (viewModel.isLoading) {
@@ -154,9 +184,17 @@ fun CatalogScreen(navController: NavController, viewModel: CatalogViewModel = hi
                         }
                     }
                 } else {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(vertical = 8.dp)
+                    ) {
                         items(viewModel.products) { product ->
-                            Card(modifier = Modifier.padding(8.dp).fillMaxWidth()) {
+                            Card(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp).fillMaxWidth(),
+                                shape = MaterialTheme.shapes.medium,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                            ) {
                                 Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Box(
                                         modifier = Modifier
@@ -178,20 +216,20 @@ fun CatalogScreen(navController: NavController, viewModel: CatalogViewModel = hi
                                             SuggestionChip(
                                                 onClick = {},
                                                 label = { Text(product.badge, fontSize = 10.sp) },
-                                                modifier = Modifier.height(24.dp).padding(bottom = 4.dp)
+                                                modifier = Modifier.height(24.dp).padding(bottom = 4.dp),
+                                                shape = RoundedCornerShape(20.dp)
                                             )
                                         }
-                                        Text(product.brand, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                                        Text(product.name, style = MaterialTheme.typography.titleMedium)
+                                        Text(product.brand, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(product.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                                         Spacer(Modifier.height(4.dp))
                                         Text(
                                             text = "${product.price} ₽ / ${product.unit_name}",
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            color = MaterialTheme.colorScheme.primary
+                                            style = MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                                         )
                                         Spacer(Modifier.height(2.dp))
                                         val stockText = if (product.stock_quantity == 0) "Нет в наличии" else "В наличии: ${product.stock_quantity} шт."
-                                        val stockColor = if (product.stock_quantity == 0) Color(0xFF9B2020) else if (product.stock_quantity < 10) Color(0xFFC8920A) else Color.Gray
+                                        val stockColor = if (product.stock_quantity == 0) Color(0xFF9B2020) else if (product.stock_quantity < 10) Color(0xFFC8920A) else MaterialTheme.colorScheme.onSurfaceVariant
                                         Text(
                                             text = stockText,
                                             style = MaterialTheme.typography.bodySmall,
@@ -200,7 +238,12 @@ fun CatalogScreen(navController: NavController, viewModel: CatalogViewModel = hi
                                     }
                                     Button(
                                         onClick = { viewModel.addToCart(product) },
-                                        enabled = product.stock_quantity > 0
+                                        enabled = product.stock_quantity > 0,
+                                        shape = MaterialTheme.shapes.small,
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary,
+                                            contentColor = MaterialTheme.colorScheme.onPrimary
+                                        )
                                     ) {
                                         Text(if (product.stock_quantity > 0) "В корзину" else "Нет")
                                     }
@@ -211,6 +254,77 @@ fun CatalogScreen(navController: NavController, viewModel: CatalogViewModel = hi
                 }
             }
         }
+    }
+
+    if (viewModel.showWarehousesDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.showWarehousesDialog = false },
+            title = { Text("Наши склады", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+            text = {
+                LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)) {
+                    if (viewModel.warehouses.isEmpty()) {
+                        item {
+                            Text("Склады не найдены или загружаются...", style = MaterialTheme.typography.bodyMedium)
+                        }
+                    } else {
+                        items(viewModel.warehouses) { wh ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                shape = MaterialTheme.shapes.small,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text(
+                                        text = "${wh.city ?: ""} — ${wh.name}",
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(text = "Адрес: ${wh.address}", style = MaterialTheme.typography.bodyMedium)
+                                    if (!wh.phone.isNullOrBlank()) {
+                                        Text(text = "Тел: ${wh.phone}", style = MaterialTheme.typography.bodyMedium)
+                                    }
+                                    if (!wh.working_hours_start.isNullOrBlank() && !wh.working_hours_end.isNullOrBlank()) {
+                                        Text(
+                                            text = "🕐 Часы работы: ${wh.working_hours_start.slice(0..4)} – ${wh.working_hours_end.slice(0..4)}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.showWarehousesDialog = false }) {
+                    Text("Закрыть", style = MaterialTheme.typography.titleMedium.copy(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold))
+                }
+            },
+            shape = MaterialTheme.shapes.medium,
+            containerColor = MaterialTheme.colorScheme.background
+        )
+    }
+}
+
+@Composable
+fun CategoryPill(text: String, isSelected: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(
+            width = 1.5.dp,
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+        ),
+        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 22.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+        )
     }
 }
 

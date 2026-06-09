@@ -32,7 +32,7 @@ data class Warehouse(
     val phone: String?,
     val working_hours_start: String?,
     val working_hours_end: String?,
-    val is_active: Int
+    val is_active: Boolean
 )
 
 data class OrderItemRequest(
@@ -45,10 +45,25 @@ data class OrderRequest(
     val warehouse_code: String?,
     val items: List<OrderItemRequest>,
     val total_amount: Double,
-    val comment: String? = null
+    val comment: String? = null,
+    val customer_name: String? = null,
+    val customer_phone: String? = null
 )
 
 data class OrderResponse(val status: String, val order_id: String)
+
+data class UserProfile(
+    val id: String,
+    val first_name: String,
+    val last_name: String?,
+    val phone: String?,
+    val email: String?,
+    val role: String
+)
+
+data class UserProfileResponse(
+    val user: UserProfile?
+)
 
 data class HistoryItem(
     val id: String,
@@ -91,5 +106,8 @@ interface ApiService {
 
     @GET("api/orders")
     suspend fun getOrderHistory(): Response<List<HistoryOrder>>
+
+    @GET("api/auth/me")
+    suspend fun getProfile(): Response<UserProfileResponse>
 }
 
